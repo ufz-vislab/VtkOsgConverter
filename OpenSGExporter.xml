@@ -1,4 +1,3 @@
-<?xml version="1.0"?>
 <ServerManagerConfiguration>
 	<ProxyGroup name="exporters">
 		<RenderViewExporterProxy name="OpenSGExporter" class="vtkOpenSGExporter" file_extension="osb">

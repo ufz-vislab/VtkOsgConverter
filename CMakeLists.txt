@@ -6,6 +6,8 @@ INCLUDE(${PARAVIEW_USE_FILE})
 ADD_PARAVIEW_PLUGIN(OpenSG_Exporter "0.1"
 	SERVER_MANAGER_XML OpenSGExporter.xml
 	SERVER_MANAGER_SOURCES vtkOpenSGExporter.h vtkOpenSGExporter.cxx
-	SERVER_SOURCES vtkOSGConverter.h vtkOSGConverter.cpp)
+	SERVER_SOURCES vtkOSGConverter.h vtkOSGConverter.cpp
+	REQUIRED_ON_SERVER
+	)
   
 TARGET_LINK_LIBRARIES(OpenSG_Exporter ${OpenSG_LIBRARIES})

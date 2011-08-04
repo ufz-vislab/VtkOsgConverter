@@ -46,34 +46,13 @@ public:
   // Specify the name of the VRML file to write.
   vtkSetStringMacro(FileName);
   vtkGetStringMacro(FileName);
-
-  // Description:
-  // Specify the Speed of navigation. Default is 4.
-  vtkSetMacro(Speed,double);
-  vtkGetMacro(Speed,double);
-
-  // Description:
-  // Set the file pointer to write to. This will override
-  // a FileName if specified.
-  void SetFilePointer(FILE *);
   
 protected:
   vtkOpenSGExporter();
   ~vtkOpenSGExporter();
 
   void WriteData();
-  void WriteALight(vtkLight *aLight, FILE *fp);
-  void WriteAnActor(vtkActor *anActor, FILE *fp);
-  void WritePointData(vtkPoints *points, vtkDataArray *normals, 
-                      vtkDataArray *tcoords, vtkUnsignedCharArray *colors, 
-                      FILE *fp);
-  void WriteShapeBegin(vtkActor* actor, FILE *fileP,
-                       vtkPolyData *polyData,vtkPointData *pntData,
-                       vtkUnsignedCharArray *color);
-  void WriteShapeEnd( FILE *fileP );
   char *FileName;
-  FILE *FilePointer;
-  double Speed;
 private:
   vtkOpenSGExporter(const vtkOpenSGExporter&);  // Not implemented.
   void operator=(const vtkOpenSGExporter&);  // Not implemented.
