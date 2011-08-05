@@ -62,7 +62,6 @@ vtkOpenSGExporter::~vtkOpenSGExporter()
   OSG::osgExit();
 }
 
-  
 void vtkOpenSGExporter::WriteData()
 {
   vtkRenderer *ren;
