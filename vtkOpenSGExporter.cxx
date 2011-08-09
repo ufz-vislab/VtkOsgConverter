@@ -44,7 +44,7 @@ vtkStandardNewMacro(vtkOpenSGExporter);
 
 vtkOpenSGExporter::vtkOpenSGExporter()
 {
-  this->DebugOn();
+  //this->DebugOn();
   this->FileName = NULL;
   
   vtkDebugMacro(<< "OpenSG converter initing");
@@ -54,50 +54,32 @@ vtkOpenSGExporter::vtkOpenSGExporter()
 vtkOpenSGExporter::~vtkOpenSGExporter()
 {
   if ( this->FileName )
-    {
     delete [] this->FileName;
-    }
   
   vtkDebugMacro(<< "OpenSG converter exiting");
   OSG::osgExit();
 }
 
 void vtkOpenSGExporter::WriteData()
-{
-  vtkRenderer *ren;
-  vtkActorCollection *ac;
-  vtkActor *anActor, *aPart;
-  vtkLightCollection *lc;
-  vtkLight *aLight;
-  vtkCamera *cam;
-  double *tempd;
-  
+{ 
   vtkDebugMacro(<< "OpenSG converter executing");
   
   // make sure the user specified a FileName or FilePointer
   if (this->FileName == NULL)
-    {
+  {
     vtkErrorMacro(<< "Please specify FileName to use");
     return;
-    }
-
-  // Always pick the first renderer
-  // first make sure there is only one renderer in this rendering window
-  //if (this->RenderWindow->GetRenderers()->GetNumberOfItems() > 1)
-  //  {
-  //  vtkErrorMacro(<< "VRML files only support one renderer per window.");
-  //  return;
-  //  }
+  }
 
   // get the renderer
-  ren = this->RenderWindow->GetRenderers()->GetFirstRenderer();
+  vtkRenderer *ren = this->RenderWindow->GetRenderers()->GetFirstRenderer();
   
   // make sure it has at least one actor
   if (ren->GetActors()->GetNumberOfItems() < 1)
-    {
+  {
     vtkErrorMacro(<< "no actors found for writing OpenSG file.");
     return;
-    }
+  }
 
   // do the actors now
   
@@ -107,25 +89,33 @@ void vtkOpenSGExporter::WriteData()
   rootNode->setCore(OSG::Group::create());
   endEditCP(rootNode);
   
-  ac = ren->GetActors();
+  vtkActor *anActor, *aPart;
+  vtkActorCollection *ac = ren->GetActors();
+  ac->PrintSelf(std::cout, vtkIndent());
   vtkAssemblyPath *apath;
   vtkCollectionSimpleIterator ait;
   for (ac->InitTraversal(ait); (anActor = ac->GetNextActor(ait)); )
-    {
+  {
     for (anActor->InitPathTraversal(); (apath=anActor->GetNextPath()); )
-      {
+    {
       aPart=static_cast<vtkActor *>(apath->GetLastNode()->GetViewProp());
-      vtkOsgConverter osgConverter(aPart);
-      osgConverter.UpdateOsg();
-      OSG::NodePtr node = osgConverter.GetOsgRoot();
-      beginEditCP(rootNode);
-      rootNode->addChild(node);
-      endEditCP(rootNode);
+      if (aPart->GetMapper() != NULL && aPart->GetVisibility() != 0)
+      {
+        vtkDebugMacro(<< "OpenSG converter: starting conversion of actor");
+        vtkOsgConverter* osgConverter = new vtkOsgConverter(aPart);
+        osgConverter->SetVerbose(true);
+        osgConverter->UpdateOsg();
+        OSG::NodePtr node = osgConverter->GetOsgRoot();
+        beginEditCP(rootNode);
+        rootNode->addChild(node);
+        endEditCP(rootNode);
+        vtkDebugMacro(<< "OpenSG converter: finished conversion of actor");
       }
+      //actorVector.push_back(aPart);
     }
-  
+  } 
+  vtkDebugMacro(<< "OpenSG converter writing file...");
   OSG::SceneFileHandler::the().write(rootNode, this->FileName);
-  
 }
 
 void vtkOpenSGExporter::PrintSelf(ostream& os, vtkIndent indent)
@@ -133,12 +123,7 @@ void vtkOpenSGExporter::PrintSelf(ostream& os, vtkIndent indent)
   this->Superclass::PrintSelf(os,indent);
  
   if (this->FileName)
-    {
     os << indent << "FileName: " << this->FileName << "\n";
-    }
   else
-    {
     os << indent << "FileName: (null)\n";
-    }
-
 }

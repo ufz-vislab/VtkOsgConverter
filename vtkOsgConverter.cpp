@@ -143,6 +143,7 @@ void vtkOsgConverter::UpdateOsg(){
 		}
 	}
 
+  std::cout << "Conversion finished." << std::endl;
 	beginEditCP(m_posgRoot);{
 		m_posgRoot->addChild(newNodePtr);
 	};endEditCP(m_posgRoot);
@@ -178,6 +179,7 @@ void vtkOsgConverter::SetVerbose(bool value){
 // }
 
 NodePtr vtkOsgConverter::GetOsgRoot(){
+  std::cout << "Returning osg root." << std::endl;
 	return m_posgRoot;
 }
 
@@ -200,9 +202,11 @@ void vtkOsgConverter::LookForNormals(){
 	if (pPolyData == NULL) return;
 
 	if (_actor->GetProperty()->GetInterpolation() == VTK_FLAT){
+    std::cerr << "Trying to get normals: GetCellData()->GetNormals()" << std::endl;
 		m_pvtkNormals = pPolyData->GetCellData()->GetNormals();
 		if (m_pvtkNormals != NULL) m_iNormalType = PER_CELL;
 	}else{
+	  std::cerr << "Trying to get normals: GetPointData()->GetNormals()" << std::endl;
 		m_pvtkNormals = pPolyData->GetPointData()->GetNormals();
 		if (m_pvtkNormals != NULL) m_iNormalType = PER_VERTEX;
 	}
