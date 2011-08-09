@@ -37,6 +37,7 @@ public:
 	vtkOsgConverter(vtkActor* actor);
 	virtual ~vtkOsgConverter();
 	
+  void WriteAnActor();
 	void UpdateOsg();
 	void ClearOsg();
 	void SetVerbose(bool value);

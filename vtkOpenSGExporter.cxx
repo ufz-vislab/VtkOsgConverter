@@ -103,18 +103,20 @@ void vtkOpenSGExporter::WriteData()
       if (aPart->GetMapper() != NULL && aPart->GetVisibility() != 0)
       {
         // Skip first actor because this is the origin
-        if (count > 0)
-        {
+        // (not the case when loaded from state)
+        //if (count > 0)
+        //{
           vtkDebugMacro(<< "OpenSG converter: starting conversion of actor");
           vtkOsgConverter* osgConverter = new vtkOsgConverter(aPart);
           osgConverter->SetVerbose(true);
+          osgConverter->WriteAnActor();
           osgConverter->UpdateOsg();
           OSG::NodePtr node = osgConverter->GetOsgRoot();
           beginEditCP(rootNode);
           rootNode->addChild(node);
           endEditCP(rootNode);
           vtkDebugMacro(<< "OpenSG converter: finished conversion of actor");
-        }
+        //}
         ++count;
       }
       //actorVector.push_back(aPart);

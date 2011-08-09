@@ -23,6 +23,9 @@
 #include <vtkMapper.h>
 #include <vtkDataSet.h>
 #include <vtkDataSetMapper.h>
+#include <vtkSmartPointer.h>
+#include <vtkCompositeDataGeometryFilter.h>
+#include <vtkGeometryFilter.h>
 
 OSG_USING_NAMESPACE
 
@@ -96,6 +99,110 @@ void vtkOsgConverter::InitOpenSG(){
 	m_posgColors = GeoColors3f::create();
 	m_posgNormals = GeoNormals3f::create();
 	m_posgTexCoords = GeoTexCoords2d::create();
+}
+
+void vtkOsgConverter::WriteAnActor()
+{
+  vtkActor *anActor = _actor;
+  vtkSmartPointer<vtkPolyData> pd;
+  vtkPointData *pntData;
+  vtkPoints *points;
+  vtkDataArray *normals = NULL;
+  vtkDataArray *tcoords = NULL;
+  int i, i1, i2;
+  double *tempd;
+  vtkCellArray *cells;
+  vtkIdType npts = 0;
+  vtkIdType *indx = 0;
+  int pointDataWritten = 0;
+  vtkPolyDataMapper *pm;
+  vtkUnsignedCharArray *colors;
+  double *p;
+  unsigned char *c;
+  vtkTransform *trans;
+
+  // see if the actor has a mapper. it could be an assembly
+  if (anActor->GetMapper() == NULL)
+    {
+    return;
+    }
+  if (anActor->GetVisibility() == 0)
+    {
+    return;
+    }
+  // first stuff out the transform
+  // trans = vtkTransform::New();
+  //   trans->SetMatrix(anActor->vtkProp3D::GetMatrix());
+  //   
+  //   fprintf(fp,"    Transform {\n");
+  //   tempd = trans->GetPosition();
+  //   fprintf(fp,"      translation %g %g %g\n", tempd[0], tempd[1], tempd[2]);
+  //   tempd = trans->GetOrientationWXYZ();
+  //   fprintf(fp,"      rotation %g %g %g %g\n", tempd[1], tempd[2], 
+  //           tempd[3], tempd[0]*3.1415926/180.0);
+  //   tempd = trans->GetScale();
+  //   fprintf(fp,"      scale %g %g %g\n", tempd[0], tempd[1], tempd[2]);
+  //   fprintf(fp,"      children [\n");
+  //   trans->Delete();
+
+  vtkDataObject* inputDO = anActor->GetMapper()->GetInputDataObject(0, 0);
+  if (inputDO == NULL)
+    {
+    return;
+    }
+  // we really want polydata
+  if (inputDO->IsA("vtkCompositeDataSet"))
+    {
+    vtkCompositeDataGeometryFilter* gf = vtkCompositeDataGeometryFilter::New();
+    gf->SetInput(inputDO);
+    gf->Update();
+    pd = gf->GetOutput();
+    gf->Delete();
+    }
+  else if (inputDO->GetDataObjectType() != VTK_POLY_DATA)
+    {
+    vtkGeometryFilter *gf = vtkGeometryFilter::New();
+    gf->SetInput(inputDO);
+    gf->Update();
+    pd = gf->GetOutput();
+    gf->Delete();
+    }
+  else
+    {
+    pd = static_cast<vtkPolyData *>(inputDO);
+    }
+
+  pm = vtkPolyDataMapper::New();
+  pm->SetInput(pd);
+  pm->SetScalarRange(anActor->GetMapper()->GetScalarRange());
+  pm->SetScalarVisibility(anActor->GetMapper()->GetScalarVisibility());
+  pm->SetLookupTable(anActor->GetMapper()->GetLookupTable());
+  pm->SetScalarMode(anActor->GetMapper()->GetScalarMode());
+
+  if ( pm->GetScalarMode() == VTK_SCALAR_MODE_USE_POINT_FIELD_DATA ||
+       pm->GetScalarMode() == VTK_SCALAR_MODE_USE_CELL_FIELD_DATA )
+    {
+    if ( anActor->GetMapper()->GetArrayAccessMode() == VTK_GET_ARRAY_BY_ID )
+      {
+      pm->ColorByArrayComponent(anActor->GetMapper()->GetArrayId(),
+        anActor->GetMapper()->GetArrayComponent());
+      }
+    else
+      {
+      pm->ColorByArrayComponent(anActor->GetMapper()->GetArrayName(),
+        anActor->GetMapper()->GetArrayComponent());
+      }
+    }
+
+  points = pd->GetPoints();
+  pntData = pd->GetPointData();
+  normals = pntData->GetNormals();
+  tcoords = pntData->GetTCoords();
+  m_pvtkColors  = pm->MapScalars(1.0);
+  if (m_pvtkColors)
+    std::cout << "Colors given!!" << std::endl;
+  else
+    std::cout << "NO colors given!!!" << std::endl;
 }
 
 void vtkOsgConverter::UpdateOsg(){
@@ -250,19 +357,20 @@ void vtkOsgConverter::LookForColors(){
 	//if (pPolyDataMapper->GetScalarVisibility() && (m_pvtkColors != NULL)){
 	if (pPolyDataMapper->GetScalarVisibility()){
 		int iScalarMode = pPolyDataMapper->GetScalarMode();
-		m_pvtkColors = pPolyDataMapper->MapScalars(1.0);
+		//m_pvtkColors = pPolyDataMapper->MapScalars(1.0);
 		if (m_pvtkColors == NULL){
 			m_iColorType = NOT_GIVEN;
+			std::cerr << "WARNING: MapScalars(1.0) did not return array!" << std::endl;
 		} else if (iScalarMode == VTK_SCALAR_MODE_USE_CELL_DATA){
 			m_iColorType = PER_CELL;
 		} else if (iScalarMode == VTK_SCALAR_MODE_USE_POINT_DATA){
 			m_iColorType = PER_VERTEX;
 		} else if (iScalarMode == VTK_SCALAR_MODE_USE_CELL_FIELD_DATA){
-			std::cerr << "WARNING: Can not process colours with scalar mode using cell field data!" << std::endl;
-			m_iColorType = NOT_GIVEN;
+			std::cerr << "WARNING TO BE REMOVED: Can not process colours with scalar mode using cell field data!" << std::endl;
+			m_iColorType = PER_CELL;
 		} else if (iScalarMode == VTK_SCALAR_MODE_USE_POINT_FIELD_DATA){
-			std::cerr << "WARNING: Can not process colours with scalar mode using point field data!" << std::endl;
-			m_iColorType = NOT_GIVEN;
+			std::cerr << "WARNING TO BE REMOVED: Can not process colours with scalar mode using point field data!" << std::endl;
+			m_iColorType = PER_VERTEX;
 		} else if (iScalarMode == VTK_SCALAR_MODE_DEFAULT){
 			//Bummer, we do not know what it is. may be we can make a guess
 			int numColors = m_pvtkColors->GetNumberOfTuples();
@@ -274,12 +382,14 @@ void vtkOsgConverter::LookForColors(){
 			numCells += pPolyData->GetStrips()->GetNumberOfCells();
 			if (numColors == 0){
 				m_iColorType = NOT_GIVEN;
+				std::cerr << "WARNING: No colors found!" << std::endl;
 			} else if (numColors == numPoints){
 				m_iColorType = PER_VERTEX;
 			} else if (numColors == numCells){
 				m_iColorType = PER_CELL;
 			} else {
 				m_iColorType = NOT_GIVEN;
+				std::cerr << "WARNING: Number of colors do not match number of points / cells!" << std::endl;
 			}
 		}
 	}
