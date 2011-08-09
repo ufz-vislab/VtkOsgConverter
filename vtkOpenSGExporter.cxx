@@ -44,7 +44,7 @@ vtkStandardNewMacro(vtkOpenSGExporter);
 
 vtkOpenSGExporter::vtkOpenSGExporter()
 {
-  //this->DebugOn();
+  this->DebugOn();
   this->FileName = NULL;
   
   vtkDebugMacro(<< "OpenSG converter initing");
@@ -94,6 +94,7 @@ void vtkOpenSGExporter::WriteData()
   ac->PrintSelf(std::cout, vtkIndent());
   vtkAssemblyPath *apath;
   vtkCollectionSimpleIterator ait;
+  int count = 0;
   for (ac->InitTraversal(ait); (anActor = ac->GetNextActor(ait)); )
   {
     for (anActor->InitPathTraversal(); (apath=anActor->GetNextPath()); )
@@ -101,20 +102,25 @@ void vtkOpenSGExporter::WriteData()
       aPart=static_cast<vtkActor *>(apath->GetLastNode()->GetViewProp());
       if (aPart->GetMapper() != NULL && aPart->GetVisibility() != 0)
       {
-        vtkDebugMacro(<< "OpenSG converter: starting conversion of actor");
-        vtkOsgConverter* osgConverter = new vtkOsgConverter(aPart);
-        osgConverter->SetVerbose(true);
-        osgConverter->UpdateOsg();
-        OSG::NodePtr node = osgConverter->GetOsgRoot();
-        beginEditCP(rootNode);
-        rootNode->addChild(node);
-        endEditCP(rootNode);
-        vtkDebugMacro(<< "OpenSG converter: finished conversion of actor");
+        // Skip first actor because this is the origin
+        if (count > 0)
+        {
+          vtkDebugMacro(<< "OpenSG converter: starting conversion of actor");
+          vtkOsgConverter* osgConverter = new vtkOsgConverter(aPart);
+          osgConverter->SetVerbose(true);
+          osgConverter->UpdateOsg();
+          OSG::NodePtr node = osgConverter->GetOsgRoot();
+          beginEditCP(rootNode);
+          rootNode->addChild(node);
+          endEditCP(rootNode);
+          vtkDebugMacro(<< "OpenSG converter: finished conversion of actor");
+        }
+        ++count;
       }
       //actorVector.push_back(aPart);
     }
   } 
-  vtkDebugMacro(<< "OpenSG converter writing file...");
+  vtkDebugMacro(<< "OpenSG converter writing file with " << count << " objects");
   OSG::SceneFileHandler::the().write(rootNode, this->FileName);
 }
 

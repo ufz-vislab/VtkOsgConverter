@@ -64,6 +64,7 @@ vtkOsgConverter::vtkOsgConverter(vtkActor* actor) :
 	TransformPtr tptr;
 	m_posgRoot = makeCoredNode<osg::Transform>(&tptr);
 	m_posgTransform = tptr;
+  _mapper = _actor->GetMapper();
 }
 
 vtkOsgConverter::~vtkOsgConverter(void)
@@ -101,7 +102,7 @@ void vtkOsgConverter::UpdateOsg(){
 	if (m_posgGeomNode == NullFC) InitOpenSG();
 	if (m_bTextureHasChanged) CreateTexture();
 
-	_actor->GetMapper()->Update();
+	_mapper->Update();
 
 	LookForNormals();
 	LookForColors();
@@ -110,11 +111,12 @@ void vtkOsgConverter::UpdateOsg(){
 	CreateTexture();
 
 	double scaling[3];
-	//double translation[3];
-	//double rotation[3];
+	double translation[3];
+	double rotation[3];
 
-	//_actor->GetPosition(translation);
+	_actor->GetPosition(translation);
 	_actor->GetScale(scaling);
+  //_actor->GetRotation(rotation[0], rotation[1], rotation[2]);
 
 	if (m_bVerbose){
 		std::cout << "set scaling: " << scaling[0] << " " << scaling[1] << " " << scaling[2] << std::endl;
@@ -122,7 +124,9 @@ void vtkOsgConverter::UpdateOsg(){
 
 	osg::Matrix m;
 	m.setIdentity();
+  m.setTranslate(translation[0], translation[1], translation[2]);
 	m.setScale(scaling[0], scaling[1], scaling[2]);
+	// TODO QUATERNION m.setRotate(rotation[0], rotation[1], rotation[2])
 	beginEditCP(m_posgTransform);{
 		m_posgTransform->setMatrix(m);
 	};endEditCP(m_posgTransform);
@@ -185,13 +189,13 @@ NodePtr vtkOsgConverter::GetOsgRoot(){
 
 void vtkOsgConverter::LookForNormals(){
 	vtkPolyData *pPolyData = NULL;
-	if (dynamic_cast<vtkPolyDataMapper*>(_actor->GetMapper())){
-		pPolyData = (vtkPolyData*) _actor->GetMapper()->GetInput();
+	if (dynamic_cast<vtkPolyDataMapper*>(_mapper)){
+		pPolyData = (vtkPolyData*) _mapper->GetInput();
 		if (m_bVerbose){
 			std::cerr << "Using vtkPolyDataMapper directly" << std::endl;
 		}
-	} else if (dynamic_cast<vtkDataSetMapper*>(_actor->GetMapper())){
-		vtkDataSetMapper *dataSetMapper = (vtkDataSetMapper*) _actor->GetMapper();
+	} else if (dynamic_cast<vtkDataSetMapper*>(_mapper)){
+		vtkDataSetMapper *dataSetMapper = (vtkDataSetMapper*) _mapper;
 		pPolyData = (vtkPolyData*) dataSetMapper->GetPolyDataMapper()->GetInput();
 		if (m_bVerbose){
 			std::cerr << "Using vtkPolyDataMapper via the vtkDataSetMapper" << std::endl;
@@ -224,14 +228,14 @@ void vtkOsgConverter::LookForNormals(){
 void vtkOsgConverter::LookForColors(){
 	vtkPolyData *pPolyData = NULL;
 	vtkPolyDataMapper *pPolyDataMapper = NULL;
-	if (dynamic_cast<vtkPolyDataMapper*>(_actor->GetMapper())){
-		pPolyDataMapper = (vtkPolyDataMapper*) _actor->GetMapper();
+	if (dynamic_cast<vtkPolyDataMapper*>(_mapper)){
+		pPolyDataMapper = (vtkPolyDataMapper*) _mapper;
 		pPolyData = (vtkPolyData*) pPolyDataMapper->GetInput();
 		if (m_bVerbose){
 			std::cerr << "Using vtkPolyDataMapper directly" << std::endl;
 		}
-	} else if (dynamic_cast<vtkDataSetMapper*>(_actor->GetMapper())){
-		vtkDataSetMapper *dataSetMapper = (vtkDataSetMapper*) _actor->GetMapper();
+	} else if (dynamic_cast<vtkDataSetMapper*>(_mapper)){
+		vtkDataSetMapper *dataSetMapper = (vtkDataSetMapper*) _mapper;
 		pPolyDataMapper = dataSetMapper->GetPolyDataMapper();
 		pPolyData = (vtkPolyData*) pPolyDataMapper->GetInput();
 		if (m_bVerbose){
@@ -292,13 +296,13 @@ void vtkOsgConverter::LookForColors(){
 
 void vtkOsgConverter::LookForTexCoords(){
 	vtkPolyData *pPolyData = NULL;
-	if (dynamic_cast<vtkPolyDataMapper*>(_actor->GetMapper())){
-		pPolyData = (vtkPolyData*) _actor->GetMapper()->GetInput();
+	if (dynamic_cast<vtkPolyDataMapper*>(_mapper)){
+		pPolyData = (vtkPolyData*) _mapper->GetInput();
 		if (m_bVerbose){
 			std::cerr << "Using vtkPolyDataMapper directly" << std::endl;
 		}
-	} else if (dynamic_cast<vtkDataSetMapper*>(_actor->GetMapper())){
-		vtkDataSetMapper *dataSetMapper = (vtkDataSetMapper*) _actor->GetMapper();
+	} else if (dynamic_cast<vtkDataSetMapper*>(_mapper)){
+		vtkDataSetMapper *dataSetMapper = (vtkDataSetMapper*) _mapper;
 		pPolyData = (vtkPolyData*) dataSetMapper->GetPolyDataMapper()->GetInput();
 		if (m_bVerbose){
 			std::cerr << "Using vtkPolyDataMapper via the vtkDataSetMapper" << std::endl;
@@ -320,13 +324,13 @@ void vtkOsgConverter::LookForTexCoords(){
 
 void vtkOsgConverter::LookForArraySizes(){
 	vtkPolyData *pPolyData = NULL;
-	if (dynamic_cast<vtkPolyDataMapper*>(_actor->GetMapper())){
-		pPolyData = (vtkPolyData*) _actor->GetMapper()->GetInput();
+	if (dynamic_cast<vtkPolyDataMapper*>(_mapper)){
+		pPolyData = (vtkPolyData*) _mapper->GetInput();
 		if (m_bVerbose){
 			std::cerr << "Using vtkPolyDataMapper directly" << std::endl;
 		}
-	} else if (dynamic_cast<vtkDataSetMapper*>(_actor->GetMapper())){
-		vtkDataSetMapper *dataSetMapper = (vtkDataSetMapper*) _actor->GetMapper();
+	} else if (dynamic_cast<vtkDataSetMapper*>(_mapper)){
+		vtkDataSetMapper *dataSetMapper = (vtkDataSetMapper*) _mapper;
 		pPolyData = (vtkPolyData*) dataSetMapper->GetPolyDataMapper()->GetInput();
 		if (m_bVerbose){
 			std::cerr << "Using vtkPolyDataMapper via the vtkDataSetMapper" << std::endl;
@@ -562,13 +566,13 @@ NodePtr vtkOsgConverter::ProcessGeometryNormalsAndColorsPerVertex(){
 	int i;
 
 	vtkPolyData *pPolyData = NULL;
-	if (dynamic_cast<vtkPolyDataMapper*>(_actor->GetMapper())){
-		pPolyData = (vtkPolyData*) _actor->GetMapper()->GetInput();
+	if (dynamic_cast<vtkPolyDataMapper*>(_mapper)){
+		pPolyData = (vtkPolyData*) _mapper->GetInput();
 		if (m_bVerbose){
 			std::cerr << "		Using vtkPolyDataMapper directly" << std::endl;
 		}
-	} else if (dynamic_cast<vtkDataSetMapper*>(_actor->GetMapper())){
-		vtkDataSetMapper *dataSetMapper = (vtkDataSetMapper*) _actor->GetMapper();
+	} else if (dynamic_cast<vtkDataSetMapper*>(_mapper)){
+		vtkDataSetMapper *dataSetMapper = (vtkDataSetMapper*) _mapper;
 		pPolyData = (vtkPolyData*) dataSetMapper->GetPolyDataMapper()->GetInput();
 		if (m_bVerbose){
 			std::cerr << "		Using vtkPolyDataMapper via the vtkDataSetMapper" << std::endl;
@@ -741,13 +745,13 @@ NodePtr vtkOsgConverter::ProcessGeometryNonIndexedCopyAttributes(int gl_primitiv
 	};endEditCP(m_posgTexCoords);
 
 	vtkPolyData *pPolyData = NULL;
-	if (dynamic_cast<vtkPolyDataMapper*>(_actor->GetMapper())){
-		pPolyData = (vtkPolyData*) _actor->GetMapper()->GetInput();
+	if (dynamic_cast<vtkPolyDataMapper*>(_mapper)){
+		pPolyData = (vtkPolyData*) _mapper->GetInput();
 		if (m_bVerbose){
 			std::cerr << "		Using vtkPolyDataMapper directly" << std::endl;
 		}
-	} else if (dynamic_cast<vtkDataSetMapper*>(_actor->GetMapper())){
-		vtkDataSetMapper *dataSetMapper = (vtkDataSetMapper*) _actor->GetMapper();
+	} else if (dynamic_cast<vtkDataSetMapper*>(_mapper)){
+		vtkDataSetMapper *dataSetMapper = (vtkDataSetMapper*) _mapper;
 		pPolyData = (vtkPolyData*) dataSetMapper->GetPolyDataMapper()->GetInput();
 		if (m_bVerbose){
 			std::cerr << "		Using vtkPolyDataMapper via the vtkDataSetMapper" << std::endl;
@@ -861,7 +865,7 @@ NodePtr vtkOsgConverter::GetNodePtr(){
 		std::cerr << "Calling GetNodePtr()" << std::endl;
 	}
 
-	_actor->GetMapper()->Update();
+	_mapper->Update();
 
 	//Rendering with OpenSG simple indexed geometry
 	if (((m_iNormalType == PER_VERTEX) || (m_iNormalType == NOT_GIVEN))  &&

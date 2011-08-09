@@ -25,6 +25,7 @@
 #include <OpenSG/OSGImage.h>
 
 class vtkActor;
+class vtkMapper;
 class vtkTexture;
 class vtkDataArray;
 class vtkUnsignedCharArray;
@@ -47,6 +48,7 @@ protected:
 
 private:
 	vtkActor* _actor;
+  vtkMapper* _mapper;
 	
 	vtkDataArray			*m_pvtkNormals;
 	vtkDataArray			*m_pvtkTexCoords;
