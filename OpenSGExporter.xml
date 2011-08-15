@@ -10,9 +10,7 @@
         </Documentation>
 			</StringVectorProperty>
 			
-			<ProxyProperty name="View"
-        command="SetView"
-        update_self="1">
+			<ProxyProperty name="View" command="SetView">
         <Documentation>
           The view to export.
         </Documentation>
@@ -21,8 +19,7 @@
         </ProxyGroupDomain>
       </ProxyProperty>
 
-      <Property name="Write" command="Write" 
-        update_self="1">
+      <Property name="Write" command="Write">
         <Documentation>
           Triggers exporting of the view.
         </Documentation>
