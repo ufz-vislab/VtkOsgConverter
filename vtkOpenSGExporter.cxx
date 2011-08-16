@@ -42,13 +42,21 @@
 
 vtkStandardNewMacro(vtkOpenSGExporter);
 
+bool vtkOpenSGExporter::osgInited = false;
+
 vtkOpenSGExporter::vtkOpenSGExporter()
 {
   this->DebugOn();
   this->FileName = NULL;
   
   vtkDebugMacro(<< "OpenSG converter initing");
-  OSG::osgInit(0, NULL);
+  if (!osgInited)
+  {
+    OSG::osgInit(0, NULL);
+    osgInited = true;
+  }
+  else
+    vtkDebugMacro(<< "OpenSG already inited");
 }
 
 vtkOpenSGExporter::~vtkOpenSGExporter()
@@ -57,7 +65,7 @@ vtkOpenSGExporter::~vtkOpenSGExporter()
     delete [] this->FileName;
   
   vtkDebugMacro(<< "OpenSG converter exiting");
-  OSG::osgExit();
+  //OSG::osgExit();
 }
 
 void vtkOpenSGExporter::WriteData()

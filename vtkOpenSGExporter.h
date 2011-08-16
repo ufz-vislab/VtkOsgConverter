@@ -57,6 +57,8 @@ protected:
 private:
   vtkOpenSGExporter(const vtkOpenSGExporter&);  // Not implemented.
   void operator=(const vtkOpenSGExporter&);  // Not implemented.
+  
+  static bool osgInited;
 };
 
 #endif
