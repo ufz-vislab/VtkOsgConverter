@@ -182,11 +182,8 @@ void vtkOsgConverter::WriteAnActor()
     std::cout << "Colors given!!" << std::endl;
   else
     std::cout << "NO colors given!!!" << std::endl;
-}
-
-void vtkOsgConverter::UpdateOsg()
-{
-	if (m_posgGeomNode == NullFC)
+    
+  if (m_posgGeomNode == NullFC)
 	  InitOpenSG();
 	if (m_bTextureHasChanged)
 	  CreateTexture();
@@ -221,12 +218,57 @@ void vtkOsgConverter::UpdateOsg()
 	endEditCP(m_posgTransform);
 
   // Get the converted OpenSG node
-	NodePtr newNodePtr = this->GetNodePtr();
+  NodePtr newNodePtr;
+  
+  _mapper->Update();
 
-	if (m_iNormalType == NOT_GIVEN)
+	//Rendering with OpenSG simple indexed geometry
+	if (((m_iNormalType == PER_VERTEX) || (m_iNormalType == NOT_GIVEN))  &&
+		((m_iColorType == PER_VERTEX) || (m_iColorType == NOT_GIVEN)))
+	{
+			newNodePtr = this->ProcessGeometryNormalsAndColorsPerVertex();
+	}
+	else
+	{
+		//Rendering with OpenSG non indexed geometry by copying a lot of attribute data
+		if(m_iNumGLPolygons > 0)
+		{
+			if(m_iNumGLPolygons != m_iNumGLPrimitives)
+				std::cerr << "WARNING: vtkActor contains different kind of primitives" << std::endl;
+			newNodePtr = this->ProcessGeometryNonIndexedCopyAttributes(GL_POLYGON);
+		}
+		else if(m_iNumGLLineStrips > 0)
+		{
+			if (m_iNumGLLineStrips != m_iNumGLPrimitives)
+				std::cerr << "WARNING: vtkActor contains different kind of primitives" << std::endl;
+			newNodePtr = this->ProcessGeometryNonIndexedCopyAttributes(GL_LINE_STRIP);
+		}
+		else if(m_iNumGLTriStrips > 0)
+		{
+			if (m_iNumGLTriStrips != m_iNumGLPrimitives)
+				std::cerr << "WARNING: vtkActor contains different kind of primitives" << std::endl;
+			newNodePtr = this->ProcessGeometryNonIndexedCopyAttributes(GL_TRIANGLE_STRIP);
+		}
+		else if (m_iNumGLPoints > 0)
+		{
+			if (m_iNumGLPoints != m_iNumGLPrimitives)
+				std::cerr << "WARNING: vtkActor contains different kind of primitives" << std::endl;
+			newNodePtr = this->ProcessGeometryNonIndexedCopyAttributes(GL_POINTS);
+		}
+		else
+			newNodePtr = NullFC;
+	}
+	
+	if(newNodePtr == NullFC)
+	{
+	  std::cerr << "OpenSG converter was not able to convert this actor." << std::endl;
+    return;
+	}
+
+	if(m_iNormalType == NOT_GIVEN)
 	{
 		GeometryPtr newGeometryPtr = GeometryPtr::dcast(newNodePtr->getCore());
-		if ((newGeometryPtr != NullFC) && (m_iColorType == PER_VERTEX))
+		if((newGeometryPtr != NullFC) && (m_iColorType == PER_VERTEX))
 		{
 			std::cout << "WARNING: Normals are missing in the vtk layer, calculating normals per vertex!" << std::endl;
 			calcVertexNormals(newGeometryPtr);
@@ -966,44 +1008,4 @@ NodePtr vtkOsgConverter::ProcessGeometryNonIndexedCopyAttributes(int gl_primitiv
 	if (m_bVerbose)
 		std::cout << "		End ProcessGeometryNonIndexedCopyAttributes(int gl_primitive_type)" << std::endl;
 	return m_posgGeomNode;
-}
-
-NodePtr vtkOsgConverter::GetNodePtr()
-{
-	if (m_bVerbose)
-		std::cerr << "Calling GetNodePtr()" << std::endl;
-
-	_mapper->Update();
-
-	//Rendering with OpenSG simple indexed geometry
-	if (((m_iNormalType == PER_VERTEX) || (m_iNormalType == NOT_GIVEN))  &&
-		((m_iColorType == PER_VERTEX) || (m_iColorType == NOT_GIVEN))){
-			return this->ProcessGeometryNormalsAndColorsPerVertex();
-	}else{
-		//Rendering with OpenSG non indexed geometry by copying a lot of attribute data
-		if (m_iNumGLPolygons > 0){
-			if (m_iNumGLPolygons != m_iNumGLPrimitives){
-				std::cerr << "WARNING: vtkActor contains different kind of primitives" << std::endl;
-			}
-			return this->ProcessGeometryNonIndexedCopyAttributes(GL_POLYGON);
-		} else if (m_iNumGLLineStrips > 0){
-			if (m_iNumGLLineStrips != m_iNumGLPrimitives){
-				std::cerr << "WARNING: vtkActor contains different kind of primitives" << std::endl;
-			}
-			return this->ProcessGeometryNonIndexedCopyAttributes(GL_LINE_STRIP);
-		} else if (m_iNumGLTriStrips > 0){
-			if (m_iNumGLTriStrips != m_iNumGLPrimitives){
-				std::cerr << "WARNING: vtkActor contains different kind of primitives" << std::endl;
-			}
-			return this->ProcessGeometryNonIndexedCopyAttributes(GL_TRIANGLE_STRIP);
-		} else if (m_iNumGLPoints > 0){
-			if (m_iNumGLPoints != m_iNumGLPrimitives){
-				std::cerr << "WARNING: vtkActor contains different kind of primitives" << std::endl;
-			}
-			return this->ProcessGeometryNonIndexedCopyAttributes(GL_POINTS);
-		} else {
-			return NullFC;
-		}
-	}
-	return NullFC;
 }

@@ -38,7 +38,6 @@ public:
 	virtual ~vtkOsgConverter();
 	
   void WriteAnActor();
-	void UpdateOsg();
 	void ClearOsg();
 	void SetVerbose(bool value);
 	void SetTexture(vtkTexture *vtkTex);
@@ -104,8 +103,6 @@ private:
 
 	//Can't use indexing and so requires a lot of storage space
 	OSG::NodePtr ProcessGeometryNonIndexedCopyAttributes(int gl_primitive_type);
-
-	OSG::NodePtr GetNodePtr();
 };
 
 #endif // VTKOSGCONVERTER_H
