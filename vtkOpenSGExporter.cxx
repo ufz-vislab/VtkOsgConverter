@@ -49,14 +49,11 @@ vtkOpenSGExporter::vtkOpenSGExporter()
   this->DebugOn();
   this->FileName = NULL;
   
-  vtkDebugMacro(<< "OpenSG converter initing");
   if (!osgInited)
   {
     OSG::osgInit(0, NULL);
     osgInited = true;
   }
-  else
-    vtkDebugMacro(<< "OpenSG already inited");
 }
 
 vtkOpenSGExporter::~vtkOpenSGExporter()
@@ -64,14 +61,11 @@ vtkOpenSGExporter::~vtkOpenSGExporter()
   if ( this->FileName )
     delete [] this->FileName;
   
-  vtkDebugMacro(<< "OpenSG converter exiting");
   //OSG::osgExit();
 }
 
 void vtkOpenSGExporter::WriteData()
 { 
-  vtkDebugMacro(<< "OpenSG converter executing");
-  
   // make sure the user specified a FileName or FilePointer
   if (this->FileName == NULL)
   {
@@ -90,7 +84,6 @@ void vtkOpenSGExporter::WriteData()
   }
 
   // do the actors now
-  
   // create group node
   OSG::NodePtr rootNode = OSG::Node::create();
   beginEditCP(rootNode);
@@ -110,27 +103,20 @@ void vtkOpenSGExporter::WriteData()
       aPart=static_cast<vtkActor *>(apath->GetLastNode()->GetViewProp());
       if (aPart->GetMapper() != NULL && aPart->GetVisibility() != 0)
       {
-        // Skip first actor because this is the origin
-        // (not the case when loaded from state)
-        //if (count > 0)
-        //{
-          vtkDebugMacro(<< "OpenSG converter: starting conversion of actor");
-          vtkOsgConverter* osgConverter = new vtkOsgConverter(aPart);
-          osgConverter->SetVerbose(true);
-          osgConverter->WriteAnActor();
-          OSG::NodePtr node = osgConverter->GetOsgRoot();
-          beginEditCP(rootNode);
-          rootNode->addChild(node);
-          endEditCP(rootNode);
-          vtkDebugMacro(<< "OpenSG converter: finished conversion of actor");
-        //}
+        vtkOsgConverter* osgConverter = new vtkOsgConverter(aPart);
+        osgConverter->SetVerbose(true);
+        osgConverter->WriteAnActor();
+        OSG::NodePtr node = osgConverter->GetOsgRoot();
+        beginEditCP(rootNode);
+        rootNode->addChild(node);
+        endEditCP(rootNode);
         ++count;
       }
-      //actorVector.push_back(aPart);
     }
   } 
-  vtkDebugMacro(<< "OpenSG converter writing file with " << count << " objects");
+  std::cout << "OpenSG converter starts writing file with " << count << " objects." << std::endl;
   OSG::SceneFileHandler::the().write(rootNode, this->FileName);
+  std::cout << "OpenSG converter finished." << std::endl;
 }
 
 void vtkOpenSGExporter::PrintSelf(ostream& os, vtkIndent indent)
