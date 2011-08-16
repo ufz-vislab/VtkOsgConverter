@@ -10,7 +10,9 @@
         </Documentation>
 			</StringVectorProperty>
 			
-			<ProxyProperty name="View" command="SetView">
+      <!-- Not needed on 10.1.x -->
+      <!--
+      <ProxyProperty name="View" command="SetView">
         <Documentation>
           The view to export.
         </Documentation>
@@ -24,6 +26,7 @@
           Triggers exporting of the view.
         </Documentation>
       </Property>
+      -->
 
 			<!-- End of OpenSGExporter -->
 		</RenderViewExporterProxy>

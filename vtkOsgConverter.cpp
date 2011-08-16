@@ -194,6 +194,7 @@ void vtkOsgConverter::WriteAnActor()
       }
     }
 
+  _mapper = pm;
   points = pd->GetPoints();
   pntData = pd->GetPointData();
   normals = pntData->GetNormals();
@@ -698,7 +699,7 @@ NodePtr vtkOsgConverter::ProcessGeometryNormalsAndColorsPerVertex(){
 			m_posgPoints->addValue(Vec3f(aVertex[0], aVertex[1], aVertex[2]));
 		}
 	}endEditCP(m_posgPoints);
-
+	
 	//possibly getting the normals
 	if (m_iNormalType == PER_VERTEX){
 		iNumNormals = m_pvtkNormals->GetNumberOfTuples();
@@ -714,7 +715,6 @@ NodePtr vtkOsgConverter::ProcessGeometryNormalsAndColorsPerVertex(){
 			std::cerr << "should equal the number of vertices (points)!" << std::endl << std::endl;
 		}
 	}
-
 	//possibly getting the colors
 	if (m_iColorType == PER_VERTEX){
 		iNumColors = m_pvtkColors->GetNumberOfTuples();
