@@ -102,7 +102,7 @@ void vtkOsgConverter::InitOpenSG()
   m_posgTexCoords = GeoTexCoords2d::create();
 }
 
-void vtkOsgConverter::WriteAnActor()
+bool vtkOsgConverter::WriteAnActor()
 {
   vtkActor *anActor = _actor;
   vtkSmartPointer<vtkPolyData> pd;
@@ -124,14 +124,14 @@ void vtkOsgConverter::WriteAnActor()
 
   // see if the actor has a mapper. it could be an assembly
   if (anActor->GetMapper() == NULL)
-    return;
+    return false;
   // dont export when not visible
   if (anActor->GetVisibility() == 0)
-    return;
+    return false;
 
   vtkDataObject* inputDO = anActor->GetMapper()->GetInputDataObject(0, 0);
   if (inputDO == NULL)
-    return;
+    return false;
 
   // Convert if necessary becasue we only want polydata
   if(inputDO->IsA("vtkCompositeDataSet"))
@@ -181,6 +181,8 @@ void vtkOsgConverter::WriteAnActor()
   
   // ARRAY SIZES
   m_iNumPoints = pd->GetNumberOfPoints();
+  if (m_iNumPoints == 0)
+    return false;
   m_iNumGLPoints = pd->GetVerts()->GetNumberOfCells();
   m_iNumGLLineStrips = pd->GetLines()->GetNumberOfCells();
   m_iNumGLPolygons = pd->GetPolys()->GetNumberOfCells();
@@ -366,7 +368,7 @@ void vtkOsgConverter::WriteAnActor()
   if(newNodePtr == NullFC)
   {
     std::cout << "OpenSG converter was not able to convert this actor." << std::endl;
-    return;
+    return false;
   }
 
   if(m_iNormalType == NOT_GIVEN)
@@ -395,6 +397,8 @@ void vtkOsgConverter::WriteAnActor()
   beginEditCP(m_posgRoot);
   m_posgRoot->addChild(newNodePtr);
   endEditCP(m_posgRoot);
+  
+  return true;
 }
 
 void vtkOsgConverter::ClearOsg(){

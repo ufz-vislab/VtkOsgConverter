@@ -38,7 +38,7 @@ public:
   vtkOsgConverter(vtkActor* actor);
   virtual ~vtkOsgConverter();
   
-  void WriteAnActor();
+  bool WriteAnActor();
   void ClearOsg();
   void SetVerbose(bool value);
   void SetTexture(vtkTexture *vtkTex);

@@ -105,12 +105,14 @@ void vtkOpenSGExporter::WriteData()
       {
         vtkOsgConverter* osgConverter = new vtkOsgConverter(aPart);
         osgConverter->SetVerbose(true);
-        osgConverter->WriteAnActor();
-        OSG::NodePtr node = osgConverter->GetOsgRoot();
-        beginEditCP(rootNode);
-        rootNode->addChild(node);
-        endEditCP(rootNode);
-        ++count;
+        if(osgConverter->WriteAnActor())
+        {
+          OSG::NodePtr node = osgConverter->GetOsgRoot();
+          beginEditCP(rootNode);
+          rootNode->addChild(node);
+          endEditCP(rootNode);
+          ++count;
+        }
       }
     }
   } 
