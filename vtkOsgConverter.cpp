@@ -78,7 +78,8 @@ vtkOsgConverter::~vtkOsgConverter(void)
 	ClearOsg();
 }
 
-void vtkOsgConverter::InitOpenSG(){
+void vtkOsgConverter::InitOpenSG()
+{
 	m_posgGeomNode = Node::create();
 	m_posgGeometry = Geometry::create();
 	m_posgMaterial = ChunkMaterial::create();
@@ -86,12 +87,12 @@ void vtkOsgConverter::InitOpenSG(){
 	m_posgTextureChunk = TextureChunk::create();
 	m_posgPolygonChunk = PolygonChunk::create();
 	m_posgImage = Image::create();
-	beginEditCP(m_posgRoot);{
-		m_posgRoot->addChild(m_posgGeomNode);
-	};endEditCP(m_posgRoot);
-	beginEditCP(m_posgGeomNode);{
-		m_posgGeomNode->setCore(m_posgGeometry);
-	};endEditCP(m_posgGeomNode);
+	beginEditCP(m_posgRoot);
+	m_posgRoot->addChild(m_posgGeomNode);
+	endEditCP(m_posgRoot);
+	beginEditCP(m_posgGeomNode);
+	m_posgGeomNode->setCore(m_posgGeometry);
+	endEditCP(m_posgGeomNode);
 	m_posgTypes = GeoPTypesUI8::create();
 	m_posgLengths = GeoPLengthsUI32::create();
 	m_posgIndices = GeoIndicesUI32::create();
@@ -123,55 +124,36 @@ void vtkOsgConverter::WriteAnActor()
 
   // see if the actor has a mapper. it could be an assembly
   if (anActor->GetMapper() == NULL)
-    {
     return;
-    }
+  // dont export when not visible
   if (anActor->GetVisibility() == 0)
-    {
     return;
-    }
-  // first stuff out the transform
-  // trans = vtkTransform::New();
-  //   trans->SetMatrix(anActor->vtkProp3D::GetMatrix());
-  //   
-  //   fprintf(fp,"    Transform {\n");
-  //   tempd = trans->GetPosition();
-  //   fprintf(fp,"      translation %g %g %g\n", tempd[0], tempd[1], tempd[2]);
-  //   tempd = trans->GetOrientationWXYZ();
-  //   fprintf(fp,"      rotation %g %g %g %g\n", tempd[1], tempd[2], 
-  //           tempd[3], tempd[0]*3.1415926/180.0);
-  //   tempd = trans->GetScale();
-  //   fprintf(fp,"      scale %g %g %g\n", tempd[0], tempd[1], tempd[2]);
-  //   fprintf(fp,"      children [\n");
-  //   trans->Delete();
 
   vtkDataObject* inputDO = anActor->GetMapper()->GetInputDataObject(0, 0);
   if (inputDO == NULL)
-    {
     return;
-    }
+
   // we really want polydata
-  if (inputDO->IsA("vtkCompositeDataSet"))
-    {
+  if(inputDO->IsA("vtkCompositeDataSet"))
+  {
     vtkCompositeDataGeometryFilter* gf = vtkCompositeDataGeometryFilter::New();
     gf->SetInput(inputDO);
     gf->Update();
     pd = gf->GetOutput();
     gf->Delete();
-    }
-  else if (inputDO->GetDataObjectType() != VTK_POLY_DATA)
-    {
+  }
+  else if(inputDO->GetDataObjectType() != VTK_POLY_DATA)
+  {
     vtkGeometryFilter *gf = vtkGeometryFilter::New();
     gf->SetInput(inputDO);
     gf->Update();
     pd = gf->GetOutput();
     gf->Delete();
-    }
+  }
   else
-    {
     pd = static_cast<vtkPolyData *>(inputDO);
-    }
 
+  // Copy mapper to a new one
   pm = vtkPolyDataMapper::New();
   pm->SetInput(pd);
   pm->SetScalarRange(anActor->GetMapper()->GetScalarRange());
@@ -179,19 +161,15 @@ void vtkOsgConverter::WriteAnActor()
   pm->SetLookupTable(anActor->GetMapper()->GetLookupTable());
   pm->SetScalarMode(anActor->GetMapper()->GetScalarMode());
 
-  if ( pm->GetScalarMode() == VTK_SCALAR_MODE_USE_POINT_FIELD_DATA ||
-       pm->GetScalarMode() == VTK_SCALAR_MODE_USE_CELL_FIELD_DATA )
-    {
-    if ( anActor->GetMapper()->GetArrayAccessMode() == VTK_GET_ARRAY_BY_ID )
-      {
+  if(pm->GetScalarMode() == VTK_SCALAR_MODE_USE_POINT_FIELD_DATA ||
+     pm->GetScalarMode() == VTK_SCALAR_MODE_USE_CELL_FIELD_DATA )
+  {
+    if(anActor->GetMapper()->GetArrayAccessMode() == VTK_GET_ARRAY_BY_ID )
       pm->ColorByArrayComponent(anActor->GetMapper()->GetArrayId(),
         anActor->GetMapper()->GetArrayComponent());
-      }
     else
-      {
       pm->ColorByArrayComponent(anActor->GetMapper()->GetArrayName(),
         anActor->GetMapper()->GetArrayComponent());
-      }
     }
 
   _mapper = pm;
@@ -200,15 +178,18 @@ void vtkOsgConverter::WriteAnActor()
   normals = pntData->GetNormals();
   tcoords = pntData->GetTCoords();
   m_pvtkColors  = pm->MapScalars(1.0);
-  if (m_pvtkColors)
+  if(m_pvtkColors)
     std::cout << "Colors given!!" << std::endl;
   else
     std::cout << "NO colors given!!!" << std::endl;
 }
 
-void vtkOsgConverter::UpdateOsg(){
-	if (m_posgGeomNode == NullFC) InitOpenSG();
-	if (m_bTextureHasChanged) CreateTexture();
+void vtkOsgConverter::UpdateOsg()
+{
+	if (m_posgGeomNode == NullFC)
+	  InitOpenSG();
+	if (m_bTextureHasChanged)
+	  CreateTexture();
 
 	_mapper->Update();
 
@@ -218,6 +199,7 @@ void vtkOsgConverter::UpdateOsg(){
 	LookForArraySizes();
 	CreateTexture();
 
+  // Get transformation
 	double scaling[3];
 	double translation[3];
 	double rotation[3];
@@ -226,39 +208,47 @@ void vtkOsgConverter::UpdateOsg(){
 	_actor->GetScale(scaling);
   //_actor->GetRotation(rotation[0], rotation[1], rotation[2]);
 
-	if (m_bVerbose){
+	if (m_bVerbose)
 		std::cout << "set scaling: " << scaling[0] << " " << scaling[1] << " " << scaling[2] << std::endl;
-	}
 
 	osg::Matrix m;
 	m.setIdentity();
   m.setTranslate(translation[0], translation[1], translation[2]);
 	m.setScale(scaling[0], scaling[1], scaling[2]);
 	// TODO QUATERNION m.setRotate(rotation[0], rotation[1], rotation[2])
-	beginEditCP(m_posgTransform);{
-		m_posgTransform->setMatrix(m);
-	};endEditCP(m_posgTransform);
+	beginEditCP(m_posgTransform);
+	m_posgTransform->setMatrix(m);
+	endEditCP(m_posgTransform);
 
+  // Get the converted OpenSG node
 	NodePtr newNodePtr = this->GetNodePtr();
 
-	if (m_iNormalType == NOT_GIVEN){
+	if (m_iNormalType == NOT_GIVEN)
+	{
 		GeometryPtr newGeometryPtr = GeometryPtr::dcast(newNodePtr->getCore());
-		if ((newGeometryPtr != NullFC) && (m_iColorType == PER_VERTEX)){
+		if ((newGeometryPtr != NullFC) && (m_iColorType == PER_VERTEX))
+		{
 			std::cout << "WARNING: Normals are missing in the vtk layer, calculating normals per vertex!" << std::endl;
 			calcVertexNormals(newGeometryPtr);
-		} else if ((newGeometryPtr != NullFC) && (m_iColorType == PER_CELL)){
+		}
+		else if ((newGeometryPtr != NullFC) && (m_iColorType == PER_CELL))
+		{
 			std::cout << "WARNING: Normals are missing in the vtk layer, calculating normals per face!" << std::endl;
 			calcFaceNormals(newGeometryPtr);
-		} else if (newGeometryPtr != NullFC){
+		}
+		else if (newGeometryPtr != NullFC)
+		{
 			std::cout << "WARNING: Normals are missing in the vtk layer, calculating normals per vertex!" << std::endl;
 			calcVertexNormals(newGeometryPtr);
 		}
 	}
 
   std::cout << "Conversion finished." << std::endl;
-	beginEditCP(m_posgRoot);{
-		m_posgRoot->addChild(newNodePtr);
-	};endEditCP(m_posgRoot);
+  
+  // Add node to root
+	beginEditCP(m_posgRoot);
+	m_posgRoot->addChild(newNodePtr);
+	endEditCP(m_posgRoot);
 }
 
 void vtkOsgConverter::ClearOsg(){
@@ -280,7 +270,8 @@ void vtkOsgConverter::ClearOsg(){
 	m_bTextureHasChanged = true;
 }
 
-void vtkOsgConverter::SetVerbose(bool value){
+void vtkOsgConverter::SetVerbose(bool value)
+{
 	m_bVerbose = value;
 }
 
@@ -290,12 +281,13 @@ void vtkOsgConverter::SetVerbose(bool value){
 // 	vtkOpenGLActor::SetTexture(vtkTex);
 // }
 
-NodePtr vtkOsgConverter::GetOsgRoot(){
-  std::cout << "Returning osg root." << std::endl;
+NodePtr vtkOsgConverter::GetOsgRoot()
+{
 	return m_posgRoot;
 }
 
-void vtkOsgConverter::LookForNormals(){
+void vtkOsgConverter::LookForNormals()
+{
 	vtkPolyData *pPolyData = NULL;
 	if (dynamic_cast<vtkPolyDataMapper*>(_mapper)){
 		pPolyData = (vtkPolyData*) _mapper->GetInput();
@@ -333,7 +325,8 @@ void vtkOsgConverter::LookForNormals(){
 	}
 }
 
-void vtkOsgConverter::LookForColors(){
+void vtkOsgConverter::LookForColors()
+{
 	vtkPolyData *pPolyData = NULL;
 	vtkPolyDataMapper *pPolyDataMapper = NULL;
 	if (dynamic_cast<vtkPolyDataMapper*>(_mapper)){
@@ -405,7 +398,8 @@ void vtkOsgConverter::LookForColors(){
 	}
 }
 
-void vtkOsgConverter::LookForTexCoords(){
+void vtkOsgConverter::LookForTexCoords()
+{
 	vtkPolyData *pPolyData = NULL;
 	if (dynamic_cast<vtkPolyDataMapper*>(_mapper)){
 		pPolyData = (vtkPolyData*) _mapper->GetInput();
@@ -433,7 +427,8 @@ void vtkOsgConverter::LookForTexCoords(){
 	}
 }
 
-void vtkOsgConverter::LookForArraySizes(){
+void vtkOsgConverter::LookForArraySizes()
+{
 	vtkPolyData *pPolyData = NULL;
 	if (dynamic_cast<vtkPolyDataMapper*>(_mapper)){
 		pPolyData = (vtkPolyData*) _mapper->GetInput();
@@ -467,7 +462,8 @@ void vtkOsgConverter::LookForArraySizes(){
 	}
 }
 
-void vtkOsgConverter::CreateTexture(){
+void vtkOsgConverter::CreateTexture()
+{
 	if (m_bVerbose){
 		std::cerr << "Calling CreateTexture()" << std::endl;
 	}
@@ -570,10 +566,11 @@ void vtkOsgConverter::CreateTexture(){
 	}
 }
 
-ChunkMaterialPtr vtkOsgConverter::CreateMaterial(){
-	if (m_bVerbose){
+ChunkMaterialPtr vtkOsgConverter::CreateMaterial()
+{
+	if (m_bVerbose)
 		std::cerr << "Start CreateMaterial()" << std::endl;
-	}
+
 	vtkProperty *prop = _actor->GetProperty();
 	double *diffuseColor = prop->GetDiffuseColor();
 	double *ambientColor = prop->GetAmbientColor();
@@ -587,7 +584,8 @@ ChunkMaterialPtr vtkOsgConverter::CreateMaterial(){
 	//float opacity = prop->GetOpacity();
 	int representation = prop->GetRepresentation();
 
-	if (m_bVerbose){
+	if (m_bVerbose)
+	{
 		std::cerr << "		Colors:" << std::endl;
 		std::cerr << "		diffuse " << diffuse << " * " << diffuseColor[0] << " " << diffuseColor[1] << " " << diffuseColor[2] << std::endl;
 		std::cerr << "		ambient " << ambient << " * " << ambientColor[0] << " " << ambientColor[1] << " " << ambientColor[2] << std::endl;
@@ -638,7 +636,8 @@ ChunkMaterialPtr vtkOsgConverter::CreateMaterial(){
 	}
 }
 
-NodePtr vtkOsgConverter::ProcessGeometryNormalsAndColorsPerVertex(){
+NodePtr vtkOsgConverter::ProcessGeometryNormalsAndColorsPerVertex()
+{
 	if (m_bVerbose){
 		std::cerr << "Start ProcessGeometryNormalsAndColorsPerVertex()" << std::endl;
 	}
@@ -815,16 +814,18 @@ NodePtr vtkOsgConverter::ProcessGeometryNormalsAndColorsPerVertex(){
 		if (m_iColorType == PER_VERTEX) m_posgGeometry->setColors(m_posgColors);
 		if (m_posgTexCoords->getSize() > 0) m_posgGeometry->setTexCoords(m_posgTexCoords);
 	};endEditCP(m_posgGeometry);
-	if (m_bVerbose){
-		std::cerr << "		Start ProcessGeometryNormalsAndColorsPerVertex()" << std::endl;
-	}
+	
+	if (m_bVerbose)
+		std::cerr << "		End ProcessGeometryNormalsAndColorsPerVertex()" << std::endl;
+
 	return m_posgGeomNode;
 }
 
-NodePtr vtkOsgConverter::ProcessGeometryNonIndexedCopyAttributes(int gl_primitive_type){
-	if (m_bVerbose){
+NodePtr vtkOsgConverter::ProcessGeometryNonIndexedCopyAttributes(int gl_primitive_type)
+{
+	if (m_bVerbose)
 		std::cout << "Start ProcessGeometryNonIndexedCopyAttributes(int gl_primitive_type)" << std::endl;
-	}
+
 
 	beginEditCP(m_posgTypes);{
 		m_posgTypes->clear();
@@ -857,15 +858,13 @@ NodePtr vtkOsgConverter::ProcessGeometryNonIndexedCopyAttributes(int gl_primitiv
 	vtkPolyData *pPolyData = NULL;
 	if (dynamic_cast<vtkPolyDataMapper*>(_mapper)){
 		pPolyData = (vtkPolyData*) _mapper->GetInput();
-		if (m_bVerbose){
-			std::cerr << "		Using vtkPolyDataMapper directly" << std::endl;
-		}
+		if (m_bVerbose)
+			std::cerr << "		Using vtkPolyDataMapper directly" << std::endl;   
 	} else if (dynamic_cast<vtkDataSetMapper*>(_mapper)){
 		vtkDataSetMapper *dataSetMapper = (vtkDataSetMapper*) _mapper;
 		pPolyData = (vtkPolyData*) dataSetMapper->GetPolyDataMapper()->GetInput();
-		if (m_bVerbose){
+		if (m_bVerbose)
 			std::cerr << "		Using vtkPolyDataMapper via the vtkDataSetMapper" << std::endl;
-		}
 	}
 	if (pPolyData == NULL) return NullFC;
 
@@ -964,16 +963,15 @@ NodePtr vtkOsgConverter::ProcessGeometryNonIndexedCopyAttributes(int gl_primitiv
 		//geo->setMaterial(getDefaultMaterial());
 	}endEditCP(m_posgGeometry);
 
-	if (m_bVerbose){
+	if (m_bVerbose)
 		std::cout << "		End ProcessGeometryNonIndexedCopyAttributes(int gl_primitive_type)" << std::endl;
-	}
 	return m_posgGeomNode;
 }
 
-NodePtr vtkOsgConverter::GetNodePtr(){
-	if (m_bVerbose){
+NodePtr vtkOsgConverter::GetNodePtr()
+{
+	if (m_bVerbose)
 		std::cerr << "Calling GetNodePtr()" << std::endl;
-	}
 
 	_mapper->Update();
 
