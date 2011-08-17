@@ -38,8 +38,6 @@ vtkOsgConverter::vtkOsgConverter(vtkActor* actor) :
   m_pvtkNormals(NULL),
   m_pvtkTexCoords(NULL),
   m_pvtkColors(NULL),
-  m_pvtkTexture(NULL),
-  m_bTextureHasChanged(false),
   m_iColorType(NOT_GIVEN),
   m_iNormalType(NOT_GIVEN),
   m_bVerbose(false),
@@ -55,10 +53,6 @@ vtkOsgConverter::vtkOsgConverter(vtkActor* actor) :
   m_posgTransform(NullFC),
   m_posgGeomNode(NullFC),
   m_posgGeometry(NullFC),
-  m_posgMaterial(NullFC),
-  m_posgMaterialChunk(NullFC),
-  m_posgTextureChunk(NullFC),
-  m_posgImage(NullFC),
   m_posgTypes(NullFC),
   m_posgLengths(NullFC),
   m_posgIndices(NullFC),
@@ -85,9 +79,6 @@ void vtkOsgConverter::InitOpenSG()
 {
   m_posgGeomNode = Node::create();
   m_posgGeometry = Geometry::create();
-  m_posgMaterial = ChunkMaterial::create();
-  m_posgTextureChunk = TextureChunk::create();
-  m_posgImage = Image::create();
   beginEditCP(m_posgRoot);
   m_posgRoot->addChild(m_posgGeomNode);
   endEditCP(m_posgRoot);
@@ -204,8 +195,6 @@ bool vtkOsgConverter::WriteAnActor()
     
   if (m_posgGeomNode == NullFC)
     InitOpenSG();
-  if (m_bTextureHasChanged)
-    CreateTexture();
 
   _mapper->Update();
 
@@ -297,11 +286,6 @@ bool vtkOsgConverter::WriteAnActor()
     else
       std::cout << "  No tex-coords where given" << std::endl;
   }
-  
-  // TEXTURE
-  m_pvtkTexture = _actor->GetTexture();
-  if (m_pvtkTexture)
-    CreateTexture();
 
   // TRANSFORMATION
   double scaling[3];
@@ -406,9 +390,6 @@ void vtkOsgConverter::ClearOsg(){
   //This also decrements the reference count, possibly deleting the objects
   m_posgGeomNode = NullFC;
   m_posgGeometry = NullFC;
-  m_posgMaterial = NullFC;
-  m_posgTextureChunk = NullFC;
-  m_posgImage = NullFC;
   m_posgTypes = NullFC;
   m_posgLengths = NullFC;
   m_posgIndices = NullFC;
@@ -416,7 +397,6 @@ void vtkOsgConverter::ClearOsg(){
   m_posgColors = NullFC;
   m_posgNormals = NullFC;
   m_posgTexCoords = NullFC;
-  m_bTextureHasChanged = true;
 }
 
 void vtkOsgConverter::SetVerbose(bool value)
@@ -424,18 +404,12 @@ void vtkOsgConverter::SetVerbose(bool value)
   m_bVerbose = value;
 }
 
-// void vtkOsgConverter::SetTexture(vtkTexture *vtkTex){
-//  m_pvtkTexture = vtkTex;
-//  m_bTextureHasChanged = true;
-//  vtkOpenGLActor::SetTexture(vtkTex);
-// }
-
 NodePtr vtkOsgConverter::GetOsgRoot()
 {
   return m_posgRoot;
 }
 
-void vtkOsgConverter::CreateTexture()
+TextureChunkPtr vtkOsgConverter::CreateTexture(vtkTexture* vtkTexture)
 {
   if(m_bVerbose)
     std::cout << "Calling CreateTexture()" << std::endl;
@@ -462,7 +436,7 @@ void vtkOsgConverter::CreateTexture()
   // }
   // m_bTextureHasChanged = false;
 
-  vtkImageData *imgData = m_pvtkTexture->GetInput();
+  vtkImageData *imgData = vtkTexture->GetInput();
   int iImgDims[3];
   imgData->GetDimensions(iImgDims);
 
@@ -492,7 +466,7 @@ void vtkOsgConverter::CreateTexture()
   if (data == NULL)
   {
     std::cout << "    could not load texture data" << std::endl;
-    return;
+    return NullFC;
   }
   
   int iImgComps = data->GetNumberOfComponents();
@@ -500,7 +474,7 @@ void vtkOsgConverter::CreateTexture()
   if (iImgPixels != (iImgDims[0] * iImgDims[1] * iImgDims[2]))
   {
     std::cout << "Number of pixels in data array seems to be wrong!" << std::endl;
-    return;
+    return NullFC;
   }
 
   UInt8 *newImageData = new UInt8[iImgDims[0] * iImgDims[1] * iImgDims[2] * iImgComps];
@@ -521,29 +495,31 @@ void vtkOsgConverter::CreateTexture()
   else
     std::cout << "Pixel data come in unsupported vtk type" << std::endl;
   
-  beginEditCP(m_posgImage);{
-    m_posgImage->setWidth(iImgDims[0]);
-    m_posgImage->setHeight(iImgDims[1]);
-    m_posgImage->setDepth(iImgDims[2]);
-    m_posgImage->setDataType(Image::OSG_UINT8_IMAGEDATA);
+  ImagePtr osgImage = Image::create();
+  beginEditCP(osgImage);{
+    osgImage->setWidth(iImgDims[0]);
+    osgImage->setHeight(iImgDims[1]);
+    osgImage->setDepth(iImgDims[2]);
+    osgImage->setDataType(Image::OSG_UINT8_IMAGEDATA);
     if (iImgComps == 1)
-      m_posgImage->setPixelFormat(Image::OSG_L_PF);
+      osgImage->setPixelFormat(Image::OSG_L_PF);
     else if (iImgComps == 3)
-      m_posgImage->setPixelFormat(Image::OSG_RGB_PF);
+      osgImage->setPixelFormat(Image::OSG_RGB_PF);
     else if (iImgComps == 4)
-      m_posgImage->setPixelFormat(Image::OSG_RGBA_PF);
+      osgImage->setPixelFormat(Image::OSG_RGBA_PF);
     else
     {
       std::cout << "Unsupported image type!" << std::endl;
       delete [] newImageData;
-      return;
+      return NullFC;
     }
-    m_posgImage->setData(newImageData);
-  };endEditCP(m_posgImage);
+    osgImage->setData(newImageData);
+  };endEditCP(osgImage);
 
-  beginEditCP(m_posgTextureChunk);{
-    m_posgTextureChunk->setImage(m_posgImage.get());
-  };endEditCP(m_posgTextureChunk);
+  TextureChunkPtr osgTextureChunk = TextureChunk::create();
+  beginEditCP(osgTextureChunk);{
+    osgTextureChunk->setImage(osgImage);
+  };endEditCP(osgTextureChunk);
 
   if (m_bVerbose)
   {
@@ -551,6 +527,8 @@ void vtkOsgConverter::CreateTexture()
     std::cout << "    components: " << iImgComps << std::endl;
     std::cout << "End CreateTexture()" << std::endl;
   }
+  
+  return osgTextureChunk;
 }
 
 ChunkMaterialPtr vtkOsgConverter::CreateMaterial()
@@ -603,63 +581,70 @@ ChunkMaterialPtr vtkOsgConverter::CreateMaterial()
     }
   };endEditCP(polygonChunk);
 
-  m_posgMaterialChunk = MaterialChunk::create();
-  beginEditCP(m_posgMaterialChunk);{
-    m_posgMaterialChunk->setDiffuse(Color4f(diffuseColor[0]*diffuse, diffuseColor[1]*diffuse, diffuseColor[2]*diffuse, opacity));
-    m_posgMaterialChunk->setSpecular(Color4f(specularColor[0]*specular, specularColor[1]*specular, specularColor[2]*specular, 1.0));
-    m_posgMaterialChunk->setAmbient(Color4f(ambientColor[0]*ambient, ambientColor[1]*ambient, ambientColor[2]*ambient, opacity));
-    m_posgMaterialChunk->setShininess(specularPower);
+  MaterialChunkPtr osgMaterialChunk = MaterialChunk::create();
+  beginEditCP(osgMaterialChunk);{
+    osgMaterialChunk->setDiffuse(Color4f(diffuseColor[0]*diffuse, diffuseColor[1]*diffuse, diffuseColor[2]*diffuse, opacity));
+    osgMaterialChunk->setSpecular(Color4f(specularColor[0]*specular, specularColor[1]*specular, specularColor[2]*specular, 1.0));
+    osgMaterialChunk->setAmbient(Color4f(ambientColor[0]*ambient, ambientColor[1]*ambient, ambientColor[2]*ambient, opacity));
+    osgMaterialChunk->setShininess(specularPower);
     
     //if(opacity < 1.0)
     //{
-      // m_posgMaterialChunk->setColorMaterial(GL_AMBIENT); // HACK: Opacity does not work with GL_AMBIENT_AND_DIFFUSE
-      //m_posgMaterialChunk->setTransparency(1.0f - opacity);
+      // osgMaterialChunk->setColorMaterial(GL_AMBIENT); // HACK: Opacity does not work with GL_AMBIENT_AND_DIFFUSE
+      //osgMaterialChunk->setTransparency(1.0f - opacity);
     //}
     //else
-      m_posgMaterialChunk->setColorMaterial(GL_AMBIENT_AND_DIFFUSE);
+      osgMaterialChunk->setColorMaterial(GL_AMBIENT_AND_DIFFUSE);
     
     // On objects consisting only of points or lines, dont lit
     if(m_iNumGLPolygons == 0 && m_iNumGLTriStrips == 0)
-      m_posgMaterialChunk->setLit(false);
+      osgMaterialChunk->setLit(false);
       
-  };endEditCP(m_posgMaterialChunk);
+  };endEditCP(osgMaterialChunk);
 
-  beginEditCP(m_posgMaterial);{
-    m_posgMaterial->addChunk(m_posgMaterialChunk);
-    m_posgMaterial->addChunk(TwoSidedLightingChunk::create());
-    m_posgMaterial->addChunk(polygonChunk);
+  ChunkMaterialPtr osgChunkMaterial = ChunkMaterial::create();
+  beginEditCP(osgChunkMaterial);{
+    osgChunkMaterial->addChunk(osgMaterialChunk);
+    osgChunkMaterial->addChunk(TwoSidedLightingChunk::create());
+    osgChunkMaterial->addChunk(polygonChunk);
     
     if(pointSize > 1.0f)
     {
       PointChunkPtr pointChunk = PointChunk::create();
       pointChunk->setSize(pointSize);
-      m_posgMaterial->addChunk(pointChunk);
+      osgChunkMaterial->addChunk(pointChunk);
     }
     
     if(lineWidth > 1.0f)
     {
       LineChunkPtr lineChunk = LineChunk::create();
       lineChunk->setWidth(lineWidth);
-      m_posgMaterial->addChunk(lineChunk);
+      osgChunkMaterial->addChunk(lineChunk);
     }
 
+    // TEXTURE
     if (m_pvtkTexCoords != NULL)
     {
-      if (m_bVerbose)
-        std::cout << "    Add TextureChunk" << std::endl;
-      m_posgMaterial->addChunk(m_posgTextureChunk);
+      vtkTexture* vtkTexture = _actor->GetTexture();
+      if (vtkTexture)
+      {
+        TextureChunkPtr osgTextureChunk = NullFC;
+        osgTextureChunk = CreateTexture(vtkTexture);
+        
+        if(osgTextureChunk != NullFC)
+        {
+          if (m_bVerbose)
+            std::cout << "    Add TextureChunk" << std::endl;
+          osgChunkMaterial->addChunk(osgTextureChunk);
+        }
+      }
     } 
-    else
-    {
-      if (m_bVerbose)
-        std::cout << "    Not adding TextureChunk" << std::endl;
-    }
-  }endEditCP(m_posgMaterial);
+  }endEditCP(osgChunkMaterial);
   
   if (m_bVerbose)
     std::cout << "    End CreateMaterial()" << std::endl;
   
-  return m_posgMaterial;
+  return osgChunkMaterial;
 }
 
 NodePtr vtkOsgConverter::ProcessGeometryNormalsAndColorsPerVertex()

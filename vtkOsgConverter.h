@@ -40,7 +40,6 @@ public:
   bool WriteAnActor();
   void ClearOsg();
   void SetVerbose(bool value);
-  void SetTexture(vtkTexture *vtkTex);
   OSG::NodePtr GetOsgRoot();
 
 protected:
@@ -53,8 +52,6 @@ private:
   vtkDataArray      *m_pvtkNormals;
   vtkDataArray      *m_pvtkTexCoords;
   vtkUnsignedCharArray  *m_pvtkColors;
-  vtkTexture        *m_pvtkTexture;
-  bool          m_bTextureHasChanged;
   vtkPolyData* _polyData;
 
   enum {NOT_GIVEN, PER_VERTEX, PER_CELL};
@@ -76,10 +73,6 @@ private:
   OSG::RefPtr<OSG::TransformPtr> m_posgTransform;
   OSG::RefPtr<OSG::NodePtr> m_posgGeomNode;
   OSG::RefPtr<OSG::GeometryPtr> m_posgGeometry;
-  OSG::RefPtr<OSG::ChunkMaterialPtr> m_posgMaterial;
-  OSG::RefPtr<OSG::MaterialChunkPtr> m_posgMaterialChunk;
-  OSG::RefPtr<OSG::TextureChunkPtr> m_posgTextureChunk;
-  OSG::RefPtr<OSG::ImagePtr> m_posgImage;
 
   OSG::RefPtr<OSG::GeoPTypesPtr> m_posgTypes;
   OSG::RefPtr<OSG::GeoPLengthsPtr> m_posgLengths;
@@ -90,7 +83,7 @@ private:
   OSG::RefPtr<OSG::GeoTexCoords2dPtr> m_posgTexCoords;
   
 
-  void CreateTexture();
+  OSG::TextureChunkPtr CreateTexture(vtkTexture* vtkTexture);
   OSG::ChunkMaterialPtr CreateMaterial();
 
   //Can use OpenSG simple indexed geometry
