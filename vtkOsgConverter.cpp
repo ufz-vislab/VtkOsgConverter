@@ -27,6 +27,9 @@
 #include <vtkCompositeDataGeometryFilter.h>
 #include <vtkGeometryFilter.h>
 
+#include <OpenSG/OSGPointChunk.h>
+#include <OpenSG/OSGLineChunk.h>
+
 OSG_USING_NAMESPACE
 
 vtkOsgConverter::vtkOsgConverter(vtkActor* actor) :
@@ -568,8 +571,12 @@ ChunkMaterialPtr vtkOsgConverter::CreateMaterial()
   double diffuse = prop->GetDiffuse();
   double ambient = prop->GetAmbient();
   double specular = prop->GetSpecular();
+  double opacity = prop->GetOpacity();
+  
+  float pointSize = prop->GetPointSize();
+  float lineWidth = prop->GetLineWidth();
+  // int lineStipplePattern = prop->GetLineStipplePattern();
 
-  //float opacity = prop->GetOpacity();
   int representation = prop->GetRepresentation();
 
   if (m_bVerbose)
@@ -581,31 +588,61 @@ ChunkMaterialPtr vtkOsgConverter::CreateMaterial()
   }
 
   beginEditCP(m_posgPolygonChunk);{
-    if (representation == VTK_SURFACE){
+    if (representation == VTK_SURFACE)
+    {
       m_posgPolygonChunk->setFrontMode(GL_FILL);
       m_posgPolygonChunk->setBackMode(GL_FILL);
-    }else if (representation == VTK_WIREFRAME){
+    }
+    else if (representation == VTK_WIREFRAME)
+    {
       m_posgPolygonChunk->setFrontMode(GL_LINE);
       m_posgPolygonChunk->setBackMode(GL_LINE);
-    }else{
+    }
+    else
+    {
       m_posgPolygonChunk->setFrontMode(GL_POINT);
       m_posgPolygonChunk->setBackMode(GL_POINT);
     }
   };endEditCP(m_posgPolygonChunk);
 
   beginEditCP(m_posgMaterialChunk);{
-    m_posgMaterialChunk->setDiffuse(Color4f(diffuseColor[0]*diffuse, diffuseColor[1]*diffuse, diffuseColor[2]*diffuse, 1.0));
+    m_posgMaterialChunk->setDiffuse(Color4f(diffuseColor[0]*diffuse, diffuseColor[1]*diffuse, diffuseColor[2]*diffuse, opacity));
     m_posgMaterialChunk->setSpecular(Color4f(specularColor[0]*specular, specularColor[1]*specular, specularColor[2]*specular, 1.0));
-    m_posgMaterialChunk->setAmbient(Color4f(ambientColor[0]*ambient, ambientColor[1]*ambient, ambientColor[2]*ambient, 1.0));
+    m_posgMaterialChunk->setAmbient(Color4f(ambientColor[0]*ambient, ambientColor[1]*ambient, ambientColor[2]*ambient, opacity));
     m_posgMaterialChunk->setShininess(specularPower);
-    m_posgMaterialChunk->setColorMaterial(GL_AMBIENT_AND_DIFFUSE);
-    //m_posgMaterialChunk->setTransparency(1.0f - opacity); // 1-opacity ?
+    
+    //if(opacity < 1.0)
+    //{
+      // m_posgMaterialChunk->setColorMaterial(GL_AMBIENT); // HACK: Opacity does not work with GL_AMBIENT_AND_DIFFUSE
+      //m_posgMaterialChunk->setTransparency(1.0f - opacity);
+    //}
+    //else
+      m_posgMaterialChunk->setColorMaterial(GL_AMBIENT_AND_DIFFUSE);
+    
+    // On objects consisting only of points or lines, dont lit
+    if(m_iNumGLPolygons == 0 && m_iNumGLTriStrips == 0)
+      m_posgMaterialChunk->setLit(false);
+      
   };endEditCP(m_posgMaterialChunk);
 
   beginEditCP(m_posgMaterial);{
     m_posgMaterial->addChunk(m_posgMaterialChunk);
     m_posgMaterial->addChunk(TwoSidedLightingChunk::create());
     m_posgMaterial->addChunk(m_posgPolygonChunk);
+    
+    if(pointSize > 1.0f)
+    {
+      PointChunkPtr pointChunk = PointChunk::create();
+      pointChunk->setSize(pointSize);
+      m_posgMaterial->addChunk(pointChunk);
+    }
+    
+    if(lineWidth > 1.0f)
+    {
+      LineChunkPtr lineChunk = LineChunk::create();
+      lineChunk->setWidth(lineWidth);
+      m_posgMaterial->addChunk(lineChunk);
+    }
 
     if (m_pvtkTexCoords != NULL)
     {
@@ -619,9 +656,11 @@ ChunkMaterialPtr vtkOsgConverter::CreateMaterial()
         std::cout << "    Not adding TextureChunk" << std::endl;
     }
   }endEditCP(m_posgMaterial);
-  return m_posgMaterial;
+  
   if (m_bVerbose)
     std::cout << "    End CreateMaterial()" << std::endl;
+  
+  return m_posgMaterial;
 }
 
 NodePtr vtkOsgConverter::ProcessGeometryNormalsAndColorsPerVertex()
