@@ -35,31 +35,9 @@ OSG_USING_NAMESPACE
 
 vtkOsgConverter::vtkOsgConverter(vtkActor* actor) :
   _actor(actor),
-  m_pvtkNormals(NULL),
-  m_pvtkTexCoords(NULL),
-  m_pvtkColors(NULL),
-  m_iColorType(NOT_GIVEN),
-  m_iNormalType(NOT_GIVEN),
   m_bVerbose(false),
-  m_iNumPoints(0),
-  m_iNumNormals(0),
-  m_iNumColors(0),
-  m_iNumGLPoints(0),
-  m_iNumGLLineStrips(0),
-  m_iNumGLPolygons(0),
-  m_iNumGLTriStrips(0),
-  m_iNumGLPrimitives(0),
   m_posgRoot(NullFC),
-  m_posgTransform(NullFC),
-  m_posgGeomNode(NullFC),
-  m_posgGeometry(NullFC),
-  m_posgTypes(NullFC),
-  m_posgLengths(NullFC),
-  m_posgIndices(NullFC),
-  m_posgPoints(NullFC),
-  m_posgColors(NullFC),
-  m_posgNormals(NullFC),
-  m_posgTexCoords(NullFC)
+  m_posgTransform(NullFC)
 {
   TransformPtr tptr;
   m_posgRoot = makeCoredNode<osg::Transform>(&tptr);
@@ -70,62 +48,33 @@ vtkOsgConverter::vtkOsgConverter(vtkActor* actor) :
 vtkOsgConverter::~vtkOsgConverter(void)
 {
   m_posgRoot = NullFC;
-
-  //Open SG Objects are deleted via the reference counting scheme
-  ClearOsg();
-}
-
-void vtkOsgConverter::InitOpenSG()
-{
-  m_posgGeomNode = Node::create();
-  m_posgGeometry = Geometry::create();
-  beginEditCP(m_posgRoot);
-  m_posgRoot->addChild(m_posgGeomNode);
-  endEditCP(m_posgRoot);
-  beginEditCP(m_posgGeomNode);
-  m_posgGeomNode->setCore(m_posgGeometry);
-  endEditCP(m_posgGeomNode);
-  m_posgTypes = GeoPTypesUI8::create();
-  m_posgLengths = GeoPLengthsUI32::create();
-  m_posgIndices = GeoIndicesUI32::create();
-  m_posgPoints = GeoPositions3f::create();
-  m_posgColors = GeoColors3f::create();
-  m_posgNormals = GeoNormals3f::create();
-  m_posgTexCoords = GeoTexCoords2d::create();
 }
 
 bool vtkOsgConverter::WriteAnActor()
 {
-  vtkActor *anActor = _actor;
-  vtkSmartPointer<vtkPolyData> pd;
-  vtkPointData *pntData;
-  vtkPoints *points;
-  vtkDataArray *normals = NULL;
-  vtkDataArray *tcoords = NULL;
   int i, i1, i2;
   double *tempd;
   vtkCellArray *cells;
   vtkIdType npts = 0;
   vtkIdType *indx = 0;
   int pointDataWritten = 0;
-  vtkPolyDataMapper *pm;
-  vtkUnsignedCharArray *colors;
   double *p;
   unsigned char *c;
   vtkTransform *trans;
 
   // see if the actor has a mapper. it could be an assembly
-  if (anActor->GetMapper() == NULL)
+  if (_actor->GetMapper() == NULL)
     return false;
   // dont export when not visible
-  if (anActor->GetVisibility() == 0)
+  if (_actor->GetVisibility() == 0)
     return false;
 
-  vtkDataObject* inputDO = anActor->GetMapper()->GetInputDataObject(0, 0);
+  vtkDataObject* inputDO = _actor->GetMapper()->GetInputDataObject(0, 0);
   if (inputDO == NULL)
     return false;
 
-  // Convert if necessary becasue we only want polydata
+  // Get PolyData. Convert if necessary becasue we only want polydata
+  vtkSmartPointer<vtkPolyData> pd;
   if(inputDO->IsA("vtkCompositeDataSet"))
   {
     vtkCompositeDataGeometryFilter* gf = vtkCompositeDataGeometryFilter::New();
@@ -146,41 +95,40 @@ bool vtkOsgConverter::WriteAnActor()
     pd = static_cast<vtkPolyData *>(inputDO);
 
   // Copy mapper to a new one
-  pm = vtkPolyDataMapper::New();
+  vtkPolyDataMapper* pm = vtkPolyDataMapper::New();
   pm->SetInput(pd);
-  pm->SetScalarRange(anActor->GetMapper()->GetScalarRange());
-  pm->SetScalarVisibility(anActor->GetMapper()->GetScalarVisibility());
-  pm->SetLookupTable(anActor->GetMapper()->GetLookupTable());
-  pm->SetScalarMode(anActor->GetMapper()->GetScalarMode());
+  pm->SetScalarRange(_actor->GetMapper()->GetScalarRange());
+  pm->SetScalarVisibility(_actor->GetMapper()->GetScalarVisibility());
+  pm->SetLookupTable(_actor->GetMapper()->GetLookupTable());
+  pm->SetScalarMode(_actor->GetMapper()->GetScalarMode());
 
   if(pm->GetScalarMode() == VTK_SCALAR_MODE_USE_POINT_FIELD_DATA ||
      pm->GetScalarMode() == VTK_SCALAR_MODE_USE_CELL_FIELD_DATA )
   {
-    if(anActor->GetMapper()->GetArrayAccessMode() == VTK_GET_ARRAY_BY_ID )
-      pm->ColorByArrayComponent(anActor->GetMapper()->GetArrayId(),
-        anActor->GetMapper()->GetArrayComponent());
+    if(_actor->GetMapper()->GetArrayAccessMode() == VTK_GET_ARRAY_BY_ID )
+      pm->ColorByArrayComponent(_actor->GetMapper()->GetArrayId(),
+        _actor->GetMapper()->GetArrayComponent());
     else
-      pm->ColorByArrayComponent(anActor->GetMapper()->GetArrayName(),
-        anActor->GetMapper()->GetArrayComponent());
+      pm->ColorByArrayComponent(_actor->GetMapper()->GetArrayName(),
+        _actor->GetMapper()->GetArrayComponent());
     }
 
   _mapper = pm;
-  points = pd->GetPoints();
-  pntData = pd->GetPointData();
-  normals = pntData->GetNormals();
-  m_pvtkTexCoords = pntData->GetTCoords();
-  m_pvtkColors  = pm->MapScalars(1.0);
+  vtkPoints* points = pd->GetPoints();
+  vtkPointData* pntData = pd->GetPointData();
+  bool hasTexCoords = false;
+  vtkUnsignedCharArray* vtkColors  = pm->MapScalars(1.0);
   
   // ARRAY SIZES
-  m_iNumPoints = pd->GetNumberOfPoints();
+  vtkIdType m_iNumPoints = pd->GetNumberOfPoints();
   if (m_iNumPoints == 0)
     return false;
-  m_iNumGLPoints = pd->GetVerts()->GetNumberOfCells();
-  m_iNumGLLineStrips = pd->GetLines()->GetNumberOfCells();
-  m_iNumGLPolygons = pd->GetPolys()->GetNumberOfCells();
-  m_iNumGLTriStrips = pd->GetStrips()->GetNumberOfCells();
-  m_iNumGLPrimitives = m_iNumGLPoints + m_iNumGLLineStrips + m_iNumGLPolygons + m_iNumGLTriStrips; 
-
+  vtkIdType m_iNumGLPoints = pd->GetVerts()->GetNumberOfCells();
+  vtkIdType m_iNumGLLineStrips = pd->GetLines()->GetNumberOfCells();
+  vtkIdType m_iNumGLPolygons = pd->GetPolys()->GetNumberOfCells();
+  vtkIdType m_iNumGLTriStrips = pd->GetStrips()->GetNumberOfCells();
+  vtkIdType m_iNumGLPrimitives = m_iNumGLPoints + m_iNumGLLineStrips + m_iNumGLPolygons + m_iNumGLTriStrips;
+  bool lit = !(m_iNumGLPolygons == 0 && m_iNumGLTriStrips == 0);
 
   if (m_bVerbose)
   {
@@ -192,29 +140,28 @@ bool vtkOsgConverter::WriteAnActor()
     std::cout << "  number of GL_TRIANGLE_STRIPS: " << m_iNumGLTriStrips << std::endl;
     std::cout << "  number of primitives: " << m_iNumGLPrimitives << std::endl;
   }
-    
-  if (m_posgGeomNode == NullFC)
-    InitOpenSG();
 
   _mapper->Update();
 
   // NORMALS
-  m_iNormalType = NOT_GIVEN;
+  vtkDataArray *vtkNormals = NULL;
+  int m_iNormalType = NOT_GIVEN;
   if (_actor->GetProperty()->GetInterpolation() == VTK_FLAT)
   {
-    m_pvtkNormals = pd->GetCellData()->GetNormals();
-    if (m_pvtkNormals != NULL) m_iNormalType = PER_CELL;
-  }else
+    vtkNormals = pd->GetCellData()->GetNormals();
+    if (vtkNormals != NULL) m_iNormalType = PER_CELL;
+  }
+  else
   {
-    m_pvtkNormals = pd->GetPointData()->GetNormals();
-    if (m_pvtkNormals != NULL) m_iNormalType = PER_VERTEX;
+    vtkNormals = pntData->GetNormals();
+    if (vtkNormals != NULL) m_iNormalType = PER_VERTEX;
   }
   if (m_bVerbose)
   {
     std::cout << "Normals:" << std::endl;
     if (m_iNormalType != NOT_GIVEN)
     {
-      std::cout << "  number of normals: " << m_pvtkNormals->GetNumberOfTuples() << std::endl;
+      std::cout << "  number of normals: " << vtkNormals->GetNumberOfTuples() << std::endl;
       std::cout << "  normals are given: ";
       std::cout << ((m_iNormalType == PER_VERTEX) ? "per vertex" : "per cell") << std::endl;
     }
@@ -223,11 +170,11 @@ bool vtkOsgConverter::WriteAnActor()
   }
   
   // COLORS
-  m_iColorType = NOT_GIVEN;
+  int m_iColorType = NOT_GIVEN;
   if(pm->GetScalarVisibility())
   {
     int iScalarMode = pm->GetScalarMode();
-    if(m_pvtkColors == NULL)
+    if(vtkColors == NULL)
     {
       m_iColorType = NOT_GIVEN;
       std::cout << "WARNING: MapScalars(1.0) did not return array!" << std::endl;
@@ -249,7 +196,7 @@ bool vtkOsgConverter::WriteAnActor()
     else if(iScalarMode == VTK_SCALAR_MODE_DEFAULT)
     {
       //Bummer, we do not know what it is. may be we can make a guess
-      int numColors = m_pvtkColors->GetNumberOfTuples();
+      int numColors = vtkColors->GetNumberOfTuples();
       if (numColors == 0)
       {
         m_iColorType = NOT_GIVEN;
@@ -270,7 +217,7 @@ bool vtkOsgConverter::WriteAnActor()
   {
     std::cout << "Colors:" << std::endl;
     if (m_iColorType != NOT_GIVEN){
-      std::cout << "  number of colors: " << m_pvtkColors->GetNumberOfTuples() << std::endl;
+      std::cout << "  number of colors: " << vtkColors->GetNumberOfTuples() << std::endl;
       std::cout << "  colors are given: " << ((m_iColorType == PER_VERTEX) ? "per vertex" : "per cell") << std::endl;
     }else{
       std::cout << "  no colors are given" << std::endl;
@@ -278,11 +225,15 @@ bool vtkOsgConverter::WriteAnActor()
   }
   
   // TEXCOORDS
+  vtkDataArray* vtkTexCoords = pntData->GetTCoords();
   if (m_bVerbose)
   {
     std::cout << "Tex-coords:" << std::endl;
-    if (m_pvtkTexCoords)
-      std::cout << "  Number of tex-coords: " << m_pvtkTexCoords->GetNumberOfTuples() << std::endl;
+    if (vtkTexCoords)
+    {
+      std::cout << "  Number of tex-coords: " << vtkTexCoords->GetNumberOfTuples() << std::endl;
+      hasTexCoords = true;
+    }
     else
       std::cout << "  No tex-coords where given" << std::endl;
   }
@@ -311,46 +262,321 @@ bool vtkOsgConverter::WriteAnActor()
   _mapper->Update();
     
   // Get the converted OpenSG node
-  NodePtr newNodePtr;
+  NodePtr osgGeomNode = Node::create();
+  GeometryPtr osgGeometry = Geometry::create();
+  beginEditCP(osgGeomNode);
+  osgGeomNode->setCore(osgGeometry);
+  endEditCP(osgGeomNode);
+  
+  bool osgConversionSuccess = false;
+  
+  GeoPTypesPtr osgTypes = GeoPTypesUI8::create();
+  GeoPLengthsPtr osgLengths = GeoPLengthsUI32::create();
+  GeoIndicesUI32Ptr osgIndices = GeoIndicesUI32::create();
+  GeoPositions3fPtr osgPoints = GeoPositions3f::create();
+  GeoNormals3fPtr osgNormals = GeoNormals3f::create();
+  GeoColors3fPtr osgColors = GeoColors3f::create();
+  GeoTexCoords2dPtr osgTexCoords = GeoTexCoords2d::create();
 
   //Rendering with OpenSG simple indexed geometry
   if (((m_iNormalType == PER_VERTEX) || (m_iNormalType == NOT_GIVEN))  &&
     ((m_iColorType == PER_VERTEX) || (m_iColorType == NOT_GIVEN)))
   {
-      newNodePtr = this->ProcessGeometryNormalsAndColorsPerVertex();
+      if (m_bVerbose)
+        std::cout << "Start ProcessGeometryNormalsAndColorsPerVertex()" << std::endl;
+
+      //getting the vertices:
+      beginEditCP(osgPoints);{
+        for (i=0; i<m_iNumPoints; i++)
+        {
+          double *aVertex = pd->GetPoint(i);
+          osgPoints->addValue(Vec3f(aVertex[0], aVertex[1], aVertex[2]));
+        }
+      }endEditCP(osgPoints);
+
+      //possibly getting the normals
+      if (m_iNormalType == PER_VERTEX)
+      {
+        vtkIdType iNumNormals = vtkNormals->GetNumberOfTuples();
+        beginEditCP(osgNormals);{
+          double *aNormal;
+          for (i=0; i<iNumNormals; i++)
+          {
+            aNormal = vtkNormals->GetTuple(i);
+            osgNormals->addValue(Vec3f(aNormal[0], aNormal[1], aNormal[2]));
+          }
+        }endEditCP(osgNormals);
+        if (iNumNormals != m_iNumPoints)
+        {
+          std::cout << "WARNING: CVtkActorToOpenSG::ProcessGeometryNormalsAndColorsPerVertex() number of normals" << std::endl;
+          std::cout << "should equal the number of vertices (points)!" << std::endl << std::endl;
+        }
+      }
+      
+      //possibly getting the colors
+      if (m_iColorType == PER_VERTEX)
+      {
+        vtkIdType iNumColors = vtkColors->GetNumberOfTuples();
+        beginEditCP(osgColors);{
+          unsigned char aColor[4];
+          for (i=0; i<iNumColors; i++)
+          {
+            vtkColors->GetTupleValue(i, aColor);
+            float r = ((float) aColor[0]) / 255.0f;
+            float g = ((float) aColor[1]) / 255.0f;
+            float b = ((float) aColor[2]) / 255.0f;
+            osgColors->addValue(Color3f(r, g, b));
+          }
+        }endEditCP(osgColors);
+        if (iNumColors != m_iNumPoints)
+        {
+          std::cout << "WARNING: CVtkActorToOpenSG::ProcessGeometryNormalsAndColorsPerVertex() number of colors" << std::endl;
+          std::cout << "should equal the number of vertices (points)!" << std::endl << std::endl;
+        }
+      }
+      
+      //possibly getting the texture coordinates. These are alwary per vertex
+      if (vtkTexCoords != NULL)
+      {
+        int numTuples = vtkTexCoords->GetNumberOfTuples();
+        for (i=0; i<numTuples; i++)
+        {
+          double texCoords[3];
+          vtkTexCoords->GetTuple(i, texCoords);
+          osgTexCoords->addValue(Vec2f(texCoords[0], texCoords[1]));
+        }
+      }
+
+      //getting the cells
+      beginEditCP(osgTypes);
+      beginEditCP(osgLengths);
+      beginEditCP(osgIndices);{
+        vtkCellArray *pCells;
+        vtkIdType npts, *pts;
+        int prim;
+
+        prim = 0;
+        pCells = pd->GetVerts();
+        if (pCells->GetNumberOfCells() > 0)
+        {
+          for (pCells->InitTraversal(); pCells->GetNextCell(npts, pts); prim++)
+          {
+            osgLengths->addValue(npts);
+            osgTypes->addValue(GL_POINTS);
+            for (i=0; i<npts; i++)
+              osgIndices->addValue(pts[i]);
+          }
+        }
+
+        prim = 0;
+        pCells = pd->GetLines();
+        if (pCells->GetNumberOfCells() > 0)
+        {
+          for (pCells->InitTraversal(); pCells->GetNextCell(npts, pts); prim++)
+          {
+            osgLengths->addValue(npts);
+            osgTypes->addValue(GL_LINE_STRIP);
+            for (i=0; i<npts; i++)
+              osgIndices->addValue(pts[i]);
+          }
+        }
+
+        prim = 0;
+        pCells = pd->GetPolys();
+        if (pCells->GetNumberOfCells() > 0)
+        {
+          for (pCells->InitTraversal(); pCells->GetNextCell(npts, pts); prim++)
+          {
+            osgLengths->addValue(npts);
+            osgTypes->addValue(GL_POLYGON);
+            for (i=0; i<npts; i++)
+              osgIndices->addValue(pts[i]);
+          }
+        }
+
+        prim = 0;
+        pCells = pd->GetStrips();
+        if (pCells->GetNumberOfCells() > 0)
+        {
+          for (pCells->InitTraversal(); pCells->GetNextCell(npts, pts); prim++)
+          {
+            osgLengths->addValue(npts);
+            osgTypes->addValue(GL_TRIANGLE_STRIP);
+            for (i=0; i<npts; i++)
+              osgIndices->addValue(pts[i]);
+          }
+        }
+      }endEditCP(osgIndices);
+      endEditCP(osgLengths);
+      endEditCP(osgTypes);
+
+      ChunkMaterialPtr material = CreateMaterial(lit, hasTexCoords);
+      beginEditCP(osgGeometry);{
+        osgGeometry->setPositions(osgPoints);
+        osgGeometry->setTypes(osgTypes);
+        osgGeometry->setLengths(osgLengths);
+        osgGeometry->setIndices(osgIndices);
+        osgGeometry->setMaterial(material);
+
+        if (m_iNormalType == PER_VERTEX) osgGeometry->setNormals(osgNormals);
+        if (m_iColorType == PER_VERTEX) osgGeometry->setColors(osgColors);
+        if (osgTexCoords->getSize() > 0) osgGeometry->setTexCoords(osgTexCoords);
+      };endEditCP(osgGeometry);
+      
+      osgConversionSuccess = true;
+
+      if (m_bVerbose)
+        std::cout << "    End ProcessGeometryNormalsAndColorsPerVertex()" << std::endl;
   }
   else
   {
     //Rendering with OpenSG non indexed geometry by copying a lot of attribute data
+    if (m_bVerbose)
+      std::cout << "Start ProcessGeometryNonIndexedCopyAttributes(int gl_primitive_type)" << std::endl;
+    int gl_primitive_type = -1;
     if(m_iNumGLPolygons > 0)
     {
       if(m_iNumGLPolygons != m_iNumGLPrimitives)
         std::cout << "WARNING: vtkActor contains different kind of primitives" << std::endl;
-      newNodePtr = this->ProcessGeometryNonIndexedCopyAttributes(GL_POLYGON);
+      gl_primitive_type = GL_POLYGON;
+      //osgConversionSuccess = this->ProcessGeometryNonIndexedCopyAttributes(GL_POLYGON, pd, osgGeometry);
     }
     else if(m_iNumGLLineStrips > 0)
     {
       if (m_iNumGLLineStrips != m_iNumGLPrimitives)
         std::cout << "WARNING: vtkActor contains different kind of primitives" << std::endl;
-      newNodePtr = this->ProcessGeometryNonIndexedCopyAttributes(GL_LINE_STRIP);
+      gl_primitive_type = GL_LINE_STRIP;
+      //osgConversionSuccess = this->ProcessGeometryNonIndexedCopyAttributes(GL_LINE_STRIP, pd osgGeometry);
     }
     else if(m_iNumGLTriStrips > 0)
     {
       if (m_iNumGLTriStrips != m_iNumGLPrimitives)
         std::cout << "WARNING: vtkActor contains different kind of primitives" << std::endl;
-      newNodePtr = this->ProcessGeometryNonIndexedCopyAttributes(GL_TRIANGLE_STRIP);
+      gl_primitive_type = GL_TRIANGLE_STRIP;
+      //osgConversionSuccess = this->ProcessGeometryNonIndexedCopyAttributes(GL_TRIANGLE_STRIP, pd osgGeometry);
     }
     else if (m_iNumGLPoints > 0)
     {
       if (m_iNumGLPoints != m_iNumGLPrimitives)
         std::cout << "WARNING: vtkActor contains different kind of primitives" << std::endl;
-      newNodePtr = this->ProcessGeometryNonIndexedCopyAttributes(GL_POINTS);
+      gl_primitive_type = GL_POINTS;
+      //osgConversionSuccess = this->ProcessGeometryNonIndexedCopyAttributes(GL_POINTS, pd osgGeometry);
     }
-    else
-      newNodePtr = NullFC;
+    if(gl_primitive_type != -1)
+    {
+      vtkCellArray *pCells;
+      if (gl_primitive_type == GL_POINTS)
+        pCells = pd->GetVerts();
+      else if (gl_primitive_type == GL_LINE_STRIP)
+        pCells = pd->GetLines();
+      else if (gl_primitive_type == GL_POLYGON)
+        pCells = pd->GetPolys();
+      else if (gl_primitive_type == GL_TRIANGLE_STRIP)
+        pCells = pd->GetStrips();
+      else
+      {
+        std::cout << "CVtkActorToOpenSG::ProcessGeometryNonIndexedCopyAttributes(int gl_primitive_type)" << std::endl;
+        std::cout << "  was called with non implemented gl_primitive_type!" << std::endl;
+      }
+
+      beginEditCP(osgTypes);
+      beginEditCP(osgLengths);
+      beginEditCP(osgPoints);
+      beginEditCP(osgColors);
+      beginEditCP(osgNormals);{
+        int prim = 0;
+        if (pCells->GetNumberOfCells() > 0)
+        {
+          vtkIdType npts, *pts;
+          for (pCells->InitTraversal(); pCells->GetNextCell(npts, pts); prim++)
+          {
+            osgLengths->addValue(npts);
+            osgTypes->addValue(GL_POLYGON);
+            for (int i=0; i<npts; i++)
+            {
+              double *aVertex;
+              double *aNormal;
+              unsigned char aColor[4];
+
+              aVertex = pd->GetPoint(pts[i]);
+              osgPoints->addValue(Vec3f(aVertex[0], aVertex[1], aVertex[2]));
+
+              if (m_iNormalType == PER_VERTEX)
+              {
+                aNormal = vtkNormals->GetTuple(pts[i]);
+                osgNormals->addValue(Vec3f(aNormal[0], aNormal[1], aNormal[2]));
+              }
+              else if (m_iNormalType == PER_CELL)
+              {
+                aNormal = vtkNormals->GetTuple(prim);
+                osgNormals->addValue(Vec3f(aNormal[0], aNormal[1], aNormal[2]));
+              }
+
+              if (m_iColorType == PER_VERTEX)
+              {
+                vtkColors->GetTupleValue(pts[i], aColor);
+                float r = ((float) aColor[0]) / 255.0f;
+                float g = ((float) aColor[1]) / 255.0f;
+                float b = ((float) aColor[2]) / 255.0f;
+                osgColors->addValue(Color3f(r, g, b));
+              }
+              else if (m_iColorType == PER_CELL)
+              {
+                vtkColors->GetTupleValue(prim, aColor);
+                float r = ((float) aColor[0]) / 255.0f;
+                float g = ((float) aColor[1]) / 255.0f;
+                float b = ((float) aColor[2]) / 255.0f;
+                osgColors->addValue(Color3f(r, g, b));
+              }
+            }
+          }
+        }
+      };endEditCP(osgTypes);
+      endEditCP(osgLengths);
+      endEditCP(osgPoints);
+      endEditCP(osgColors);
+      endEditCP(osgNormals);
+
+      //possibly getting the texture coordinates. These are always per vertex
+      vtkPoints *points = pd->GetPoints();
+      if ((vtkTexCoords != NULL) && (points != NULL))
+      {
+        int numPoints = points->GetNumberOfPoints();
+        int numTexCoords = vtkTexCoords->GetNumberOfTuples();
+        if (numPoints == numTexCoords){
+          beginEditCP(osgTexCoords);{
+            int numTuples = vtkTexCoords->GetNumberOfTuples();
+            for (int i=0; i<numTuples; i++)
+            {
+              double texCoords[3];
+              vtkTexCoords->GetTuple(i, texCoords);
+              osgTexCoords->addValue(Vec2f(texCoords[0], texCoords[1]));
+            }
+          };endEditCP(osgTexCoords);
+        }
+      }
+
+      ChunkMaterialPtr material = CreateMaterial(lit, hasTexCoords);
+      //GeometryPtr geo = Geometry::create();
+      beginEditCP(osgGeometry);{
+        osgGeometry->setPositions(osgPoints);
+        osgGeometry->setTypes(osgTypes);
+        osgGeometry->setLengths(osgLengths);
+        osgGeometry->setMaterial(material);
+
+        if (m_iNormalType != NOT_GIVEN) osgGeometry->setNormals(osgNormals);
+        if (m_iColorType != NOT_GIVEN) osgGeometry->setColors(osgColors);
+        if (osgTexCoords->getSize() > 0) osgGeometry->setTexCoords(osgTexCoords);
+        //geo->setMaterial(getDefaultMaterial());
+      }endEditCP(osgGeometry);
+      
+      osgConversionSuccess = true;
+    }
+    if (m_bVerbose)
+      std::cout << "    End ProcessGeometryNonIndexedCopyAttributes(int gl_primitive_type)" << std::endl;
   }
   
-  if(newNodePtr == NullFC)
+  if(!osgConversionSuccess)
   {
     std::cout << "OpenSG converter was not able to convert this actor." << std::endl;
     return false;
@@ -358,21 +584,21 @@ bool vtkOsgConverter::WriteAnActor()
 
   if(m_iNormalType == NOT_GIVEN)
   {
-    GeometryPtr newGeometryPtr = GeometryPtr::dcast(newNodePtr->getCore());
-    if((newGeometryPtr != NullFC) && (m_iColorType == PER_VERTEX))
+    //GeometryPtr newGeometryPtr = GeometryPtr::dcast(newNodePtr->getCore());
+    if((osgGeometry != NullFC) && (m_iColorType == PER_VERTEX))
     {
       std::cout << "WARNING: Normals are missing in the vtk layer, calculating normals per vertex!" << std::endl;
-      calcVertexNormals(newGeometryPtr);
+      calcVertexNormals(osgGeometry);
     }
-    else if ((newGeometryPtr != NullFC) && (m_iColorType == PER_CELL))
+    else if ((osgGeometry != NullFC) && (m_iColorType == PER_CELL))
     {
       std::cout << "WARNING: Normals are missing in the vtk layer, calculating normals per face!" << std::endl;
-      calcFaceNormals(newGeometryPtr);
+      calcFaceNormals(osgGeometry);
     }
-    else if (newGeometryPtr != NullFC)
+    else if (osgGeometry != NullFC)
     {
       std::cout << "WARNING: Normals are missing in the vtk layer, calculating normals per vertex!" << std::endl;
-      calcVertexNormals(newGeometryPtr);
+      calcVertexNormals(osgGeometry);
     }
   }
 
@@ -380,23 +606,10 @@ bool vtkOsgConverter::WriteAnActor()
   
   // Add node to root
   beginEditCP(m_posgRoot);
-  m_posgRoot->addChild(newNodePtr);
+  m_posgRoot->addChild(osgGeomNode);
   endEditCP(m_posgRoot);
   
   return true;
-}
-
-void vtkOsgConverter::ClearOsg(){
-  //This also decrements the reference count, possibly deleting the objects
-  m_posgGeomNode = NullFC;
-  m_posgGeometry = NullFC;
-  m_posgTypes = NullFC;
-  m_posgLengths = NullFC;
-  m_posgIndices = NullFC;
-  m_posgPoints = NullFC;
-  m_posgColors = NullFC;
-  m_posgNormals = NullFC;
-  m_posgTexCoords = NullFC;
 }
 
 void vtkOsgConverter::SetVerbose(bool value)
@@ -531,7 +744,7 @@ TextureChunkPtr vtkOsgConverter::CreateTexture(vtkTexture* vtkTexture)
   return osgTextureChunk;
 }
 
-ChunkMaterialPtr vtkOsgConverter::CreateMaterial()
+ChunkMaterialPtr vtkOsgConverter::CreateMaterial(bool lit, bool hasTexCoords)
 {
   if (m_bVerbose)
     std::cout << "Start CreateMaterial()" << std::endl;
@@ -597,7 +810,7 @@ ChunkMaterialPtr vtkOsgConverter::CreateMaterial()
       osgMaterialChunk->setColorMaterial(GL_AMBIENT_AND_DIFFUSE);
     
     // On objects consisting only of points or lines, dont lit
-    if(m_iNumGLPolygons == 0 && m_iNumGLTriStrips == 0)
+    if(!lit)
       osgMaterialChunk->setLit(false);
       
   };endEditCP(osgMaterialChunk);
@@ -623,7 +836,7 @@ ChunkMaterialPtr vtkOsgConverter::CreateMaterial()
     }
 
     // TEXTURE
-    if (m_pvtkTexCoords != NULL)
+    if (hasTexCoords)
     {
       vtkTexture* vtkTexture = _actor->GetTexture();
       if (vtkTexture)
@@ -645,361 +858,4 @@ ChunkMaterialPtr vtkOsgConverter::CreateMaterial()
     std::cout << "    End CreateMaterial()" << std::endl;
   
   return osgChunkMaterial;
-}
-
-NodePtr vtkOsgConverter::ProcessGeometryNormalsAndColorsPerVertex()
-{
-  if (m_bVerbose)
-    std::cout << "Start ProcessGeometryNormalsAndColorsPerVertex()" << std::endl;
-
-  beginEditCP(m_posgTypes);{
-    m_posgTypes->clear();
-  };endEditCP(m_posgTypes);
-
-  beginEditCP(m_posgLengths);{
-    m_posgLengths->clear();
-  };endEditCP(m_posgLengths);
-
-  beginEditCP(m_posgIndices);{
-    m_posgIndices->clear();
-  };endEditCP(m_posgIndices);
-
-  beginEditCP(m_posgPoints);{
-    m_posgPoints->clear();
-  };endEditCP(m_posgPoints);
-
-  beginEditCP(m_posgColors);{
-    m_posgColors->clear();
-  };endEditCP(m_posgColors);
-
-  beginEditCP(m_posgNormals);{
-    m_posgNormals->clear();
-  };endEditCP(m_posgNormals);
-
-  beginEditCP(m_posgTexCoords);{
-    m_posgTexCoords->clear();
-  };endEditCP(m_posgTexCoords);
-
-  int iNumPoints = 0;
-  int iNumNormals = 0;
-  int iNumColors = 0;
-  int i;
-
-  vtkPolyData *pPolyData = NULL;
-  if (dynamic_cast<vtkPolyDataMapper*>(_mapper))
-  {
-    pPolyData = (vtkPolyData*) _mapper->GetInput();
-    if (m_bVerbose){
-      std::cout << "    Using vtkPolyDataMapper directly" << std::endl;
-    }
-  } else if (dynamic_cast<vtkDataSetMapper*>(_mapper)){
-    vtkDataSetMapper *dataSetMapper = (vtkDataSetMapper*) _mapper;
-    pPolyData = (vtkPolyData*) dataSetMapper->GetPolyDataMapper()->GetInput();
-    if (m_bVerbose){
-      std::cout << "    Using vtkPolyDataMapper via the vtkDataSetMapper" << std::endl;
-    }
-  }
-  if (pPolyData == NULL) return NullFC;
-
-  //getting the vertices:
-  beginEditCP(m_posgPoints);{
-    iNumPoints = pPolyData->GetNumberOfPoints();
-    for (i=0; i<iNumPoints; i++)
-    {
-      double *aVertex = pPolyData->GetPoint(i);
-      m_posgPoints->addValue(Vec3f(aVertex[0], aVertex[1], aVertex[2]));
-    }
-  }endEditCP(m_posgPoints);
-  
-  //possibly getting the normals
-  if (m_iNormalType == PER_VERTEX)
-  {
-    iNumNormals = m_pvtkNormals->GetNumberOfTuples();
-    beginEditCP(m_posgNormals);{
-      double *aNormal;
-      for (i=0; i<iNumNormals; i++)
-      {
-        aNormal = m_pvtkNormals->GetTuple(i);
-        m_posgNormals->addValue(Vec3f(aNormal[0], aNormal[1], aNormal[2]));
-      }
-    }endEditCP(m_posgNormals);
-    if (iNumNormals != iNumPoints)
-    {
-      std::cout << "WARNING: CVtkActorToOpenSG::ProcessGeometryNormalsAndColorsPerVertex() number of normals" << std::endl;
-      std::cout << "should equal the number of vertices (points)!" << std::endl << std::endl;
-    }
-  }
-  //possibly getting the colors
-  if (m_iColorType == PER_VERTEX)
-  {
-    iNumColors = m_pvtkColors->GetNumberOfTuples();
-    beginEditCP(m_posgColors);{
-      unsigned char aColor[4];
-      for (i=0; i<iNumColors; i++)
-      {
-        m_pvtkColors->GetTupleValue(i, aColor);
-        float r = ((float) aColor[0]) / 255.0f;
-        float g = ((float) aColor[1]) / 255.0f;
-        float b = ((float) aColor[2]) / 255.0f;
-        m_posgColors->addValue(Color3f(r, g, b));
-      }
-    }endEditCP(m_posgColors);
-    if (iNumColors != iNumPoints)
-    {
-      std::cout << "WARNING: CVtkActorToOpenSG::ProcessGeometryNormalsAndColorsPerVertex() number of colors" << std::endl;
-      std::cout << "should equal the number of vertices (points)!" << std::endl << std::endl;
-    }
-  }
-
-  //possibly getting the texture coordinates. These are alwary per vertex
-  if (m_pvtkTexCoords != NULL)
-  {
-    int numTuples = m_pvtkTexCoords->GetNumberOfTuples();
-    for (i=0; i<numTuples; i++)
-    {
-      double texCoords[3];
-      m_pvtkTexCoords->GetTuple(i, texCoords);
-      m_posgTexCoords->addValue(Vec2f(texCoords[0], texCoords[1]));
-    }
-  }
-
-  //getting the cells
-  beginEditCP(m_posgTypes);
-  beginEditCP(m_posgLengths);
-  beginEditCP(m_posgIndices);{
-    vtkCellArray *pCells;
-    vtkIdType npts, *pts;
-    int prim;
-
-    prim = 0;
-    pCells = pPolyData->GetVerts();
-    if (pCells->GetNumberOfCells() > 0)
-    {
-      for (pCells->InitTraversal(); pCells->GetNextCell(npts, pts); prim++)
-      {
-        m_posgLengths->addValue(npts);
-        m_posgTypes->addValue(GL_POINTS);
-        for (i=0; i<npts; i++)
-          m_posgIndices->addValue(pts[i]);
-      }
-    }
-
-    prim = 0;
-    pCells = pPolyData->GetLines();
-    if (pCells->GetNumberOfCells() > 0)
-    {
-      for (pCells->InitTraversal(); pCells->GetNextCell(npts, pts); prim++)
-      {
-        m_posgLengths->addValue(npts);
-        m_posgTypes->addValue(GL_LINE_STRIP);
-        for (i=0; i<npts; i++)
-          m_posgIndices->addValue(pts[i]);
-      }
-    }
-
-    prim = 0;
-    pCells = pPolyData->GetPolys();
-    if (pCells->GetNumberOfCells() > 0)
-    {
-      for (pCells->InitTraversal(); pCells->GetNextCell(npts, pts); prim++)
-      {
-        m_posgLengths->addValue(npts);
-        m_posgTypes->addValue(GL_POLYGON);
-        for (i=0; i<npts; i++)
-          m_posgIndices->addValue(pts[i]);
-      }
-    }
-
-    prim = 0;
-    pCells = pPolyData->GetStrips();
-    if (pCells->GetNumberOfCells() > 0)
-    {
-      for (pCells->InitTraversal(); pCells->GetNextCell(npts, pts); prim++)
-      {
-        m_posgLengths->addValue(npts);
-        m_posgTypes->addValue(GL_TRIANGLE_STRIP);
-        for (i=0; i<npts; i++)
-          m_posgIndices->addValue(pts[i]);
-      }
-    }
-  }endEditCP(m_posgIndices);
-  endEditCP(m_posgLengths);
-  endEditCP(m_posgTypes);
-
-  ChunkMaterialPtr material = CreateMaterial();
-  beginEditCP(m_posgGeometry);{
-    m_posgGeometry->setPositions(m_posgPoints);
-    m_posgGeometry->setTypes(m_posgTypes);
-    m_posgGeometry->setLengths(m_posgLengths);
-    m_posgGeometry->setIndices(m_posgIndices);
-    m_posgGeometry->setMaterial(material);
-
-    if (m_iNormalType == PER_VERTEX) m_posgGeometry->setNormals(m_posgNormals);
-    if (m_iColorType == PER_VERTEX) m_posgGeometry->setColors(m_posgColors);
-    if (m_posgTexCoords->getSize() > 0) m_posgGeometry->setTexCoords(m_posgTexCoords);
-  };endEditCP(m_posgGeometry);
-  
-  if (m_bVerbose)
-    std::cout << "    End ProcessGeometryNormalsAndColorsPerVertex()" << std::endl;
-
-  return m_posgGeomNode;
-}
-
-NodePtr vtkOsgConverter::ProcessGeometryNonIndexedCopyAttributes(int gl_primitive_type)
-{
-  if (m_bVerbose)
-    std::cout << "Start ProcessGeometryNonIndexedCopyAttributes(int gl_primitive_type)" << std::endl;
-
-
-  beginEditCP(m_posgTypes);{
-    m_posgTypes->clear();
-  };endEditCP(m_posgTypes);
-
-  beginEditCP(m_posgLengths);{
-    m_posgLengths->clear();
-  };endEditCP(m_posgLengths);
-
-  beginEditCP(m_posgIndices);{
-    m_posgIndices->clear();
-  };endEditCP(m_posgIndices);
-
-  beginEditCP(m_posgPoints);{
-    m_posgPoints->clear();
-  };endEditCP(m_posgPoints);
-
-  beginEditCP(m_posgColors);{
-    m_posgColors->clear();
-  };endEditCP(m_posgColors);
-
-  beginEditCP(m_posgNormals);{
-    m_posgNormals->clear();
-  };endEditCP(m_posgNormals);
-
-  beginEditCP(m_posgTexCoords);{
-    m_posgTexCoords->clear();
-  };endEditCP(m_posgTexCoords);
-
-  vtkPolyData *pPolyData = NULL;
-  if (dynamic_cast<vtkPolyDataMapper*>(_mapper)){
-    pPolyData = (vtkPolyData*) _mapper->GetInput();
-    if (m_bVerbose)
-      std::cout << "    Using vtkPolyDataMapper directly" << std::endl;   
-  } else if (dynamic_cast<vtkDataSetMapper*>(_mapper)){
-    vtkDataSetMapper *dataSetMapper = (vtkDataSetMapper*) _mapper;
-    pPolyData = (vtkPolyData*) dataSetMapper->GetPolyDataMapper()->GetInput();
-    if (m_bVerbose)
-      std::cout << "    Using vtkPolyDataMapper via the vtkDataSetMapper" << std::endl;
-  }
-  if (pPolyData == NULL) return NullFC;
-
-  vtkCellArray *pCells;
-  if (gl_primitive_type == GL_POINTS)
-    pCells = pPolyData->GetVerts();
-  else if (gl_primitive_type == GL_LINE_STRIP)
-    pCells = pPolyData->GetLines();
-  else if (gl_primitive_type == GL_POLYGON)
-    pCells = pPolyData->GetPolys();
-  else if (gl_primitive_type == GL_TRIANGLE_STRIP)
-    pCells = pPolyData->GetStrips();
-  else
-  {
-    std::cout << "CVtkActorToOpenSG::ProcessGeometryNonIndexedCopyAttributes(int gl_primitive_type)" << std::endl;
-    std::cout << "  was called with non implemented gl_primitive_type!" << std::endl;
-    return NullFC;
-  }
-
-  beginEditCP(m_posgTypes);
-  beginEditCP(m_posgLengths);
-  beginEditCP(m_posgPoints);
-  beginEditCP(m_posgColors);
-  beginEditCP(m_posgNormals);{
-    int prim = 0;
-    if (pCells->GetNumberOfCells() > 0)
-    {
-      vtkIdType npts, *pts;
-      for (pCells->InitTraversal(); pCells->GetNextCell(npts, pts); prim++)
-      {
-        m_posgLengths->addValue(npts);
-        m_posgTypes->addValue(GL_POLYGON);
-        for (int i=0; i<npts; i++)
-        {
-          double *aVertex;
-          double *aNormal;
-          unsigned char aColor[4];
-
-          aVertex = pPolyData->GetPoint(pts[i]);
-          m_posgPoints->addValue(Vec3f(aVertex[0], aVertex[1], aVertex[2]));
-
-          if (m_iNormalType == PER_VERTEX)
-          {
-            aNormal = m_pvtkNormals->GetTuple(pts[i]);
-            m_posgNormals->addValue(Vec3f(aNormal[0], aNormal[1], aNormal[2]));
-          }
-          else if (m_iNormalType == PER_CELL)
-          {
-            aNormal = m_pvtkNormals->GetTuple(prim);
-            m_posgNormals->addValue(Vec3f(aNormal[0], aNormal[1], aNormal[2]));
-          }
-
-          if (m_iColorType == PER_VERTEX)
-          {
-            m_pvtkColors->GetTupleValue(pts[i], aColor);
-            float r = ((float) aColor[0]) / 255.0f;
-            float g = ((float) aColor[1]) / 255.0f;
-            float b = ((float) aColor[2]) / 255.0f;
-            m_posgColors->addValue(Color3f(r, g, b));
-          }
-          else if (m_iColorType == PER_CELL)
-          {
-            m_pvtkColors->GetTupleValue(prim, aColor);
-            float r = ((float) aColor[0]) / 255.0f;
-            float g = ((float) aColor[1]) / 255.0f;
-            float b = ((float) aColor[2]) / 255.0f;
-            m_posgColors->addValue(Color3f(r, g, b));
-          }
-        }
-      }
-    }
-  };endEditCP(m_posgTypes);
-  endEditCP(m_posgLengths);
-  endEditCP(m_posgPoints);
-  endEditCP(m_posgColors);
-  endEditCP(m_posgNormals);
-
-  //possibly getting the texture coordinates. These are always per vertex
-  vtkPoints *points = pPolyData->GetPoints();
-  if ((m_pvtkTexCoords != NULL) && (points != NULL))
-  {
-    int numPoints = points->GetNumberOfPoints();
-    int numTexCoords = m_pvtkTexCoords->GetNumberOfTuples();
-    if (numPoints == numTexCoords){
-      beginEditCP(m_posgTexCoords);{
-        int numTuples = m_pvtkTexCoords->GetNumberOfTuples();
-        for (int i=0; i<numTuples; i++)
-        {
-          double texCoords[3];
-          m_pvtkTexCoords->GetTuple(i, texCoords);
-          m_posgTexCoords->addValue(Vec2f(texCoords[0], texCoords[1]));
-        }
-      };endEditCP(m_posgTexCoords);
-    }
-  }
-
-  ChunkMaterialPtr material = CreateMaterial();
-  //GeometryPtr geo = Geometry::create();
-  beginEditCP(m_posgGeometry);{
-    m_posgGeometry->setPositions(m_posgPoints);
-    m_posgGeometry->setTypes(m_posgTypes);
-    m_posgGeometry->setLengths(m_posgLengths);
-    m_posgGeometry->setMaterial(material);
-
-    if (m_iNormalType != NOT_GIVEN) m_posgGeometry->setNormals(m_posgNormals);
-    if (m_iColorType != NOT_GIVEN) m_posgGeometry->setColors(m_posgColors);
-    if (m_posgTexCoords->getSize() > 0) m_posgGeometry->setTexCoords(m_posgTexCoords);
-    //geo->setMaterial(getDefaultMaterial());
-  }endEditCP(m_posgGeometry);
-
-  if (m_bVerbose)
-    std::cout << "    End ProcessGeometryNonIndexedCopyAttributes(int gl_primitive_type)" << std::endl;
-  return m_posgGeomNode;
 }

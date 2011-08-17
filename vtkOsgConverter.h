@@ -38,59 +38,25 @@ public:
   virtual ~vtkOsgConverter();
   
   bool WriteAnActor();
-  void ClearOsg();
   void SetVerbose(bool value);
   OSG::NodePtr GetOsgRoot();
 
 protected:
-  void InitOpenSG(void);
 
 private:
   vtkActor* _actor;
   vtkMapper* _mapper;
-  
-  vtkDataArray      *m_pvtkNormals;
-  vtkDataArray      *m_pvtkTexCoords;
-  vtkUnsignedCharArray  *m_pvtkColors;
-  vtkPolyData* _polyData;
 
   enum {NOT_GIVEN, PER_VERTEX, PER_CELL};
-  int           m_iColorType;
-  int           m_iNormalType;
   bool          m_bVerbose;
 
-  int           m_iNumPoints;
-  int           m_iNumNormals;
-  int           m_iNumColors;
-  int           m_iNumGLPoints;
-  int           m_iNumGLLineStrips;
-  int           m_iNumGLPolygons;
-  int           m_iNumGLTriStrips;
-  int           m_iNumGLPrimitives;
 
   //For the translation to OpenSG
   OSG::RefPtr<OSG::NodePtr> m_posgRoot;
   OSG::RefPtr<OSG::TransformPtr> m_posgTransform;
-  OSG::RefPtr<OSG::NodePtr> m_posgGeomNode;
-  OSG::RefPtr<OSG::GeometryPtr> m_posgGeometry;
-
-  OSG::RefPtr<OSG::GeoPTypesPtr> m_posgTypes;
-  OSG::RefPtr<OSG::GeoPLengthsPtr> m_posgLengths;
-  OSG::RefPtr<OSG::GeoIndicesUI32Ptr> m_posgIndices;
-  OSG::RefPtr<OSG::GeoPositions3fPtr> m_posgPoints;
-  OSG::RefPtr<OSG::GeoColors3fPtr> m_posgColors;
-  OSG::RefPtr<OSG::GeoNormals3fPtr> m_posgNormals;
-  OSG::RefPtr<OSG::GeoTexCoords2dPtr> m_posgTexCoords;
-  
 
   OSG::TextureChunkPtr CreateTexture(vtkTexture* vtkTexture);
-  OSG::ChunkMaterialPtr CreateMaterial();
-
-  //Can use OpenSG simple indexed geometry
-  OSG::NodePtr ProcessGeometryNormalsAndColorsPerVertex();
-
-  //Can't use indexing and so requires a lot of storage space
-  OSG::NodePtr ProcessGeometryNonIndexedCopyAttributes(int gl_primitive_type);
+  OSG::ChunkMaterialPtr CreateMaterial(bool lit, bool hasTexCoords);
 };
 
 #endif // VTKOSGCONVERTER_H
