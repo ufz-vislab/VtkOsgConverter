@@ -27,6 +27,7 @@
 #include <vtkCompositeDataGeometryFilter.h>
 #include <vtkGeometryFilter.h>
 
+#include <OpenSG/OSGPolygonChunk.h>
 #include <OpenSG/OSGPointChunk.h>
 #include <OpenSG/OSGLineChunk.h>
 
@@ -57,7 +58,6 @@ vtkOsgConverter::vtkOsgConverter(vtkActor* actor) :
   m_posgMaterial(NullFC),
   m_posgMaterialChunk(NullFC),
   m_posgTextureChunk(NullFC),
-  m_posgPolygonChunk(NullFC),
   m_posgImage(NullFC),
   m_posgTypes(NullFC),
   m_posgLengths(NullFC),
@@ -86,9 +86,7 @@ void vtkOsgConverter::InitOpenSG()
   m_posgGeomNode = Node::create();
   m_posgGeometry = Geometry::create();
   m_posgMaterial = ChunkMaterial::create();
-  m_posgMaterialChunk = MaterialChunk::create();
   m_posgTextureChunk = TextureChunk::create();
-  m_posgPolygonChunk = PolygonChunk::create();
   m_posgImage = Image::create();
   beginEditCP(m_posgRoot);
   m_posgRoot->addChild(m_posgGeomNode);
@@ -409,9 +407,7 @@ void vtkOsgConverter::ClearOsg(){
   m_posgGeomNode = NullFC;
   m_posgGeometry = NullFC;
   m_posgMaterial = NullFC;
-  m_posgMaterialChunk = NullFC;
   m_posgTextureChunk = NullFC;
-  m_posgPolygonChunk = NullFC;
   m_posgImage = NullFC;
   m_posgTypes = NullFC;
   m_posgLengths = NullFC;
@@ -587,24 +583,27 @@ ChunkMaterialPtr vtkOsgConverter::CreateMaterial()
     std::cout << "    specular " << specular << " * " << specularColor[0] << " " << specularColor[1] << " " << specularColor[2] << std::endl;
   }
 
-  beginEditCP(m_posgPolygonChunk);{
+  
+  PolygonChunkPtr polygonChunk = PolygonChunk::create();
+  beginEditCP(polygonChunk);{
     if (representation == VTK_SURFACE)
     {
-      m_posgPolygonChunk->setFrontMode(GL_FILL);
-      m_posgPolygonChunk->setBackMode(GL_FILL);
+      polygonChunk->setFrontMode(GL_FILL);
+      polygonChunk->setBackMode(GL_FILL);
     }
     else if (representation == VTK_WIREFRAME)
     {
-      m_posgPolygonChunk->setFrontMode(GL_LINE);
-      m_posgPolygonChunk->setBackMode(GL_LINE);
+      polygonChunk->setFrontMode(GL_LINE);
+      polygonChunk->setBackMode(GL_LINE);
     }
     else
     {
-      m_posgPolygonChunk->setFrontMode(GL_POINT);
-      m_posgPolygonChunk->setBackMode(GL_POINT);
+      polygonChunk->setFrontMode(GL_POINT);
+      polygonChunk->setBackMode(GL_POINT);
     }
-  };endEditCP(m_posgPolygonChunk);
+  };endEditCP(polygonChunk);
 
+  m_posgMaterialChunk = MaterialChunk::create();
   beginEditCP(m_posgMaterialChunk);{
     m_posgMaterialChunk->setDiffuse(Color4f(diffuseColor[0]*diffuse, diffuseColor[1]*diffuse, diffuseColor[2]*diffuse, opacity));
     m_posgMaterialChunk->setSpecular(Color4f(specularColor[0]*specular, specularColor[1]*specular, specularColor[2]*specular, 1.0));
@@ -628,7 +627,7 @@ ChunkMaterialPtr vtkOsgConverter::CreateMaterial()
   beginEditCP(m_posgMaterial);{
     m_posgMaterial->addChunk(m_posgMaterialChunk);
     m_posgMaterial->addChunk(TwoSidedLightingChunk::create());
-    m_posgMaterial->addChunk(m_posgPolygonChunk);
+    m_posgMaterial->addChunk(polygonChunk);
     
     if(pointSize > 1.0f)
     {

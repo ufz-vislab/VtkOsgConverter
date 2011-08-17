@@ -19,7 +19,6 @@
 #include <OpenSG/OSGGeoFunctions.h>
 #include <OpenSG/OSGGroup.h>
 #include <OpenSG/OSGTwoSidedLightingChunk.h>
-#include <OpenSG/OSGPolygonChunk.h>
 #include <OpenSG/OSGGeoFunctions.h>
 #include <OpenSG/OSGTransform.h>
 #include <OpenSG/OSGImage.h>
@@ -80,7 +79,6 @@ private:
   OSG::RefPtr<OSG::ChunkMaterialPtr> m_posgMaterial;
   OSG::RefPtr<OSG::MaterialChunkPtr> m_posgMaterialChunk;
   OSG::RefPtr<OSG::TextureChunkPtr> m_posgTextureChunk;
-  OSG::RefPtr<OSG::PolygonChunkPtr> m_posgPolygonChunk;
   OSG::RefPtr<OSG::ImagePtr> m_posgImage;
 
   OSG::RefPtr<OSG::GeoPTypesPtr> m_posgTypes;
