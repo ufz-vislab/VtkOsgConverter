@@ -81,12 +81,12 @@ void vtkOpenSGExporter::WriteData()
       aPart=static_cast<vtkActor *>(apath->GetLastNode()->GetViewProp());
       if (aPart->GetMapper() != NULL && aPart->GetVisibility() != 0)
       {
-        vtkOsgConverter* osgConverter = new vtkOsgConverter(aPart);
-        osgConverter->SetVerbose(true);
-        if(osgConverter->WriteAnActor())
+        vtkOsgConverter osgConverter(aPart);
+        osgConverter.SetVerbose(true);
+        if(osgConverter.WriteAnActor())
         {
           beginEditCP(rootNode);
-          rootNode->addChild(osgConverter->GetOsgNode());
+          rootNode->addChild(osgConverter.GetOsgNode());
           endEditCP(rootNode);
           ++count;
         }
