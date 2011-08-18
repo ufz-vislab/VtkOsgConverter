@@ -20,26 +20,16 @@
 
 vtkStandardNewMacro(vtkOpenSGExporter);
 
-bool vtkOpenSGExporter::osgInited = false;
-
 vtkOpenSGExporter::vtkOpenSGExporter()
 {
   this->DebugOn();
   this->FileName = NULL;
-  
-  if (!osgInited)
-  {
-    OSG::osgInit(0, NULL);
-    osgInited = true;
-  }
 }
 
 vtkOpenSGExporter::~vtkOpenSGExporter()
 {
   if ( this->FileName )
     delete [] this->FileName;
-  
-  //OSG::osgExit();
 }
 
 void vtkOpenSGExporter::WriteData()
