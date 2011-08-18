@@ -1,44 +1,22 @@
-/*=========================================================================
+/**
+ * \file vtkOpenSGExporter.cxx
+ * 18/08/2011 LB Initial implementation
+ * 
+ * Implementation of vtkOpenSGExporter class
+ */
 
-  Program:   Visualization Toolkit
-  Module:    vtkOpenSGExporter.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+// ** INCLUDES **
 #include "vtkOpenSGExporter.h"
-
 #include "vtkOsgConverter.h"
+
 #include <OpenSG/OSGSceneFileHandler.h>
 #include <OpenSG/OSGGroup.h>
 
 #include "vtkAssemblyNode.h"
 #include "vtkAssemblyPath.h"
-#include "vtkCamera.h"
-#include "vtkCellArray.h"
-#include "vtkCompositeDataGeometryFilter.h"
-#include "vtkCompositeDataSet.h"
-#include "vtkGeometryFilter.h"
-#include "vtkImageData.h"
-#include "vtkLightCollection.h"
-#include "vtkLight.h"
-#include "vtkMath.h"
 #include "vtkObjectFactory.h"
-#include "vtkPointData.h"
-#include "vtkPolyData.h"
-#include "vtkPolyDataMapper.h"
-#include "vtkProperty.h"
 #include "vtkRendererCollection.h"
 #include "vtkRenderWindow.h"
-#include "vtkSmartPointer.h"
-#include "vtkTexture.h"
-#include "vtkTransform.h"
 
 vtkStandardNewMacro(vtkOpenSGExporter);
 
