@@ -19,7 +19,6 @@
 #include <vtkCellData.h>
 #include <vtkCellArray.h>
 #include <vtkImageData.h>
-
 #include <vtkMapper.h>
 #include <vtkDataSet.h>
 #include <vtkDataSetMapper.h>
@@ -30,6 +29,13 @@
 #include <OpenSG/OSGPolygonChunk.h>
 #include <OpenSG/OSGPointChunk.h>
 #include <OpenSG/OSGLineChunk.h>
+#include <OpenSG/OSGMatrix.h>
+#include <OpenSG/OSGSimpleGeometry.h>
+#include <OpenSG/OSGMaterialChunk.h>
+#include <OpenSG/OSGGeoFunctions.h>
+#include <OpenSG/OSGGroup.h>
+#include <OpenSG/OSGTwoSidedLightingChunk.h>
+#include <OpenSG/OSGImage.h>
 
 OSG_USING_NAMESPACE
 
@@ -52,15 +58,7 @@ vtkOsgConverter::~vtkOsgConverter(void)
 
 bool vtkOsgConverter::WriteAnActor()
 {
-  int i, i1, i2;
-  double *tempd;
-  vtkCellArray *cells;
-  vtkIdType npts = 0;
-  vtkIdType *indx = 0;
-  int pointDataWritten = 0;
-  double *p;
-  unsigned char *c;
-  vtkTransform *trans;
+
 
   // see if the actor has a mapper. it could be an assembly
   if (_actor->GetMapper() == NULL)
@@ -287,7 +285,7 @@ bool vtkOsgConverter::WriteAnActor()
 
       //getting the vertices:
       beginEditCP(osgPoints);{
-        for (i=0; i<m_iNumPoints; i++)
+        for (int i=0; i<m_iNumPoints; i++)
         {
           double *aVertex = pd->GetPoint(i);
           osgPoints->addValue(Vec3f(aVertex[0], aVertex[1], aVertex[2]));
@@ -300,7 +298,7 @@ bool vtkOsgConverter::WriteAnActor()
         vtkIdType iNumNormals = vtkNormals->GetNumberOfTuples();
         beginEditCP(osgNormals);{
           double *aNormal;
-          for (i=0; i<iNumNormals; i++)
+          for (int i=0; i<iNumNormals; i++)
           {
             aNormal = vtkNormals->GetTuple(i);
             osgNormals->addValue(Vec3f(aNormal[0], aNormal[1], aNormal[2]));
@@ -319,7 +317,7 @@ bool vtkOsgConverter::WriteAnActor()
         vtkIdType iNumColors = vtkColors->GetNumberOfTuples();
         beginEditCP(osgColors);{
           unsigned char aColor[4];
-          for (i=0; i<iNumColors; i++)
+          for (int i=0; i<iNumColors; i++)
           {
             vtkColors->GetTupleValue(i, aColor);
             float r = ((float) aColor[0]) / 255.0f;
@@ -339,7 +337,7 @@ bool vtkOsgConverter::WriteAnActor()
       if (vtkTexCoords != NULL)
       {
         int numTuples = vtkTexCoords->GetNumberOfTuples();
-        for (i=0; i<numTuples; i++)
+        for (int i=0; i<numTuples; i++)
         {
           double texCoords[3];
           vtkTexCoords->GetTuple(i, texCoords);
@@ -363,7 +361,7 @@ bool vtkOsgConverter::WriteAnActor()
           {
             osgLengths->addValue(npts);
             osgTypes->addValue(GL_POINTS);
-            for (i=0; i<npts; i++)
+            for (int i=0; i<npts; i++)
               osgIndices->addValue(pts[i]);
           }
         }
@@ -376,7 +374,7 @@ bool vtkOsgConverter::WriteAnActor()
           {
             osgLengths->addValue(npts);
             osgTypes->addValue(GL_LINE_STRIP);
-            for (i=0; i<npts; i++)
+            for (int i=0; i<npts; i++)
               osgIndices->addValue(pts[i]);
           }
         }
@@ -389,7 +387,7 @@ bool vtkOsgConverter::WriteAnActor()
           {
             osgLengths->addValue(npts);
             osgTypes->addValue(GL_POLYGON);
-            for (i=0; i<npts; i++)
+            for (int i=0; i<npts; i++)
               osgIndices->addValue(pts[i]);
           }
         }
@@ -402,7 +400,7 @@ bool vtkOsgConverter::WriteAnActor()
           {
             osgLengths->addValue(npts);
             osgTypes->addValue(GL_TRIANGLE_STRIP);
-            for (i=0; i<npts; i++)
+            for (int i=0; i<npts; i++)
               osgIndices->addValue(pts[i]);
           }
         }

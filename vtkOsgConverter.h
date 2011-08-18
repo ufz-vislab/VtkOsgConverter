@@ -10,25 +10,12 @@
 #include <OpenSG/OSGRefPtr.h>
 #include <OpenSG/OSGNode.h>
 #include <OpenSG/OSGTransform.h>
-#include <OpenSG/OSGMatrix.h>
-#include <OpenSG/OSGSimpleGeometry.h>
-#include <OpenSG/OSGSimpleMaterial.h>
-#include <OpenSG/OSGChunkMaterial.h>
-#include <OpenSG/OSGMaterialChunk.h>
 #include <OpenSG/OSGTextureChunk.h>
-#include <OpenSG/OSGGeoFunctions.h>
-#include <OpenSG/OSGGroup.h>
-#include <OpenSG/OSGTwoSidedLightingChunk.h>
-#include <OpenSG/OSGGeoFunctions.h>
-#include <OpenSG/OSGTransform.h>
-#include <OpenSG/OSGImage.h>
+#include <OpenSG/OSGChunkMaterial.h>
 
 class vtkActor;
 class vtkMapper;
 class vtkTexture;
-class vtkDataArray;
-class vtkUnsignedCharArray;
-class vtkPolyData;
 
 /// @brief
 class vtkOsgConverter
