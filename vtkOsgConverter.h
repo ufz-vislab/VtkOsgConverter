@@ -17,7 +17,18 @@ class vtkActor;
 class vtkMapper;
 class vtkTexture;
 
-/// @brief
+/// @brief Converts a vtkActor to an OpenSG-Node.
+/// Example usage:
+/// 
+/// @code
+/// vtkOsgConverter* osgConverter = new vtkOsgConverter(aVtkActor);
+/// if(osgConverter->WriteAnActor())
+/// {
+///   beginEditCP(rootNode);
+///   rootNode->addChild(osgConverter->GetOsgNode());
+///   endEditCP(rootNode);
+/// }
+/// @endcode
 class vtkOsgConverter
 {
 public:
@@ -26,7 +37,7 @@ public:
   
   bool WriteAnActor();
   void SetVerbose(bool value);
-  OSG::NodePtr GetOsgRoot();
+  OSG::NodePtr GetOsgNode();
 
 protected:
 
@@ -35,12 +46,12 @@ private:
   vtkMapper* _mapper;
 
   enum {NOT_GIVEN, PER_VERTEX, PER_CELL};
-  bool          m_bVerbose;
+  bool _verbose;
 
 
   //For the translation to OpenSG
-  OSG::RefPtr<OSG::NodePtr> m_posgRoot;
-  OSG::RefPtr<OSG::TransformPtr> m_posgTransform;
+  OSG::RefPtr<OSG::NodePtr> _osgRoot;
+  OSG::RefPtr<OSG::TransformPtr> _osgTransform;
 
   OSG::TextureChunkPtr CreateTexture(vtkTexture* vtkTexture);
   OSG::ChunkMaterialPtr CreateMaterial(bool lit, bool hasTexCoords);

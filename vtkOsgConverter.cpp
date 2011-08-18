@@ -41,19 +41,19 @@ OSG_USING_NAMESPACE
 
 vtkOsgConverter::vtkOsgConverter(vtkActor* actor) :
   _actor(actor),
-  m_bVerbose(false),
-  m_posgRoot(NullFC),
-  m_posgTransform(NullFC)
+  _verbose(false),
+  _osgRoot(NullFC),
+  _osgTransform(NullFC)
 {
   TransformPtr tptr;
-  m_posgRoot = makeCoredNode<osg::Transform>(&tptr);
-  m_posgTransform = tptr;
+  _osgRoot = makeCoredNode<osg::Transform>(&tptr);
+  _osgTransform = tptr;
   _mapper = _actor->GetMapper();
 }
 
 vtkOsgConverter::~vtkOsgConverter(void)
 {
-  m_posgRoot = NullFC;
+  _osgRoot = NullFC;
 }
 
 bool vtkOsgConverter::WriteAnActor()
@@ -128,7 +128,7 @@ bool vtkOsgConverter::WriteAnActor()
   vtkIdType m_iNumGLPrimitives = m_iNumGLPoints + m_iNumGLLineStrips + m_iNumGLPolygons + m_iNumGLTriStrips;
   bool lit = !(m_iNumGLPolygons == 0 && m_iNumGLTriStrips == 0);
 
-  if (m_bVerbose)
+  if (_verbose)
   {
     std::cout << "Array sizes:" << std::endl;
     std::cout << "  number of vertices: " << m_iNumPoints << std::endl;
@@ -154,7 +154,7 @@ bool vtkOsgConverter::WriteAnActor()
     vtkNormals = pntData->GetNormals();
     if (vtkNormals != NULL) m_iNormalType = PER_VERTEX;
   }
-  if (m_bVerbose)
+  if (_verbose)
   {
     std::cout << "Normals:" << std::endl;
     if (m_iNormalType != NOT_GIVEN)
@@ -211,7 +211,7 @@ bool vtkOsgConverter::WriteAnActor()
       }
     }
   }
-  if (m_bVerbose)
+  if (_verbose)
   {
     std::cout << "Colors:" << std::endl;
     if (m_iColorType != NOT_GIVEN){
@@ -224,7 +224,7 @@ bool vtkOsgConverter::WriteAnActor()
   
   // TEXCOORDS
   vtkDataArray* vtkTexCoords = pntData->GetTCoords();
-  if (m_bVerbose)
+  if (_verbose)
   {
     std::cout << "Tex-coords:" << std::endl;
     if (vtkTexCoords)
@@ -245,7 +245,7 @@ bool vtkOsgConverter::WriteAnActor()
   _actor->GetScale(scaling);
   //_actor->GetRotation(rotation[0], rotation[1], rotation[2]);
 
-  if (m_bVerbose)
+  if (_verbose)
     std::cout << "set scaling: " << scaling[0] << " " << scaling[1] << " " << scaling[2] << std::endl;
 
   osg::Matrix m;
@@ -253,9 +253,9 @@ bool vtkOsgConverter::WriteAnActor()
   m.setTranslate(translation[0], translation[1], translation[2]);
   m.setScale(scaling[0], scaling[1], scaling[2]);
   // TODO QUATERNION m.setRotate(rotation[0], rotation[1], rotation[2])
-  beginEditCP(m_posgTransform);
-  m_posgTransform->setMatrix(m);
-  endEditCP(m_posgTransform);
+  beginEditCP(_osgTransform);
+  _osgTransform->setMatrix(m);
+  endEditCP(_osgTransform);
 
   _mapper->Update();
     
@@ -280,7 +280,7 @@ bool vtkOsgConverter::WriteAnActor()
   if (((m_iNormalType == PER_VERTEX) || (m_iNormalType == NOT_GIVEN))  &&
     ((m_iColorType == PER_VERTEX) || (m_iColorType == NOT_GIVEN)))
   {
-      if (m_bVerbose)
+      if (_verbose)
         std::cout << "Start ProcessGeometryNormalsAndColorsPerVertex()" << std::endl;
 
       //getting the vertices:
@@ -423,13 +423,13 @@ bool vtkOsgConverter::WriteAnActor()
       
       osgConversionSuccess = true;
 
-      if (m_bVerbose)
+      if (_verbose)
         std::cout << "    End ProcessGeometryNormalsAndColorsPerVertex()" << std::endl;
   }
   else
   {
     //Rendering with OpenSG non indexed geometry by copying a lot of attribute data
-    if (m_bVerbose)
+    if (_verbose)
       std::cout << "Start ProcessGeometryNonIndexedCopyAttributes(int gl_primitive_type)" << std::endl;
     int gl_primitive_type = -1;
     if(m_iNumGLPolygons > 0)
@@ -570,7 +570,7 @@ bool vtkOsgConverter::WriteAnActor()
       
       osgConversionSuccess = true;
     }
-    if (m_bVerbose)
+    if (_verbose)
       std::cout << "    End ProcessGeometryNonIndexedCopyAttributes(int gl_primitive_type)" << std::endl;
   }
   
@@ -603,31 +603,31 @@ bool vtkOsgConverter::WriteAnActor()
   std::cout << "Conversion finished." << std::endl;
   
   // Add node to root
-  beginEditCP(m_posgRoot);
-  m_posgRoot->addChild(osgGeomNode);
-  endEditCP(m_posgRoot);
+  beginEditCP(_osgRoot);
+  _osgRoot->addChild(osgGeomNode);
+  endEditCP(_osgRoot);
   
   return true;
 }
 
 void vtkOsgConverter::SetVerbose(bool value)
 {
-  m_bVerbose = value;
+  _verbose = value;
 }
 
-NodePtr vtkOsgConverter::GetOsgRoot()
+NodePtr vtkOsgConverter::GetOsgNode()
 {
-  return m_posgRoot;
+  return _osgRoot;
 }
 
 TextureChunkPtr vtkOsgConverter::CreateTexture(vtkTexture* vtkTexture)
 {
-  if(m_bVerbose)
+  if(_verbose)
     std::cout << "Calling CreateTexture()" << std::endl;
     
   // if(! m_bTextureHasChanged)
   // {
-  //   if (m_bVerbose)
+  //   if (_verbose)
   //   {
   //     std::cout << "    ... nothing to do" << std::endl;
   //     std::cout << "    End CreateTexture()" << std::endl;
@@ -637,7 +637,7 @@ TextureChunkPtr vtkOsgConverter::CreateTexture(vtkTexture* vtkTexture)
   // }
   // else if(m_pvtkTexture == NULL)
   // {
-  //   if (m_bVerbose)
+  //   if (_verbose)
   //   {
   //     std::cout << "    ... texture is (still ?) NULL" << std::endl;
   //     std::cout << "    EndCreateTexture()" << std::endl;
@@ -661,7 +661,7 @@ TextureChunkPtr vtkOsgConverter::CreateTexture(vtkTexture* vtkTexture)
     if (NULL != imgPointData->GetScalars())
     {
       data = imgPointData->GetScalars();
-      if (m_bVerbose) std::cout << "    found texture data in point data" << std::endl;
+      if (_verbose) std::cout << "    found texture data in point data" << std::endl;
     }
   }
 
@@ -670,7 +670,7 @@ TextureChunkPtr vtkOsgConverter::CreateTexture(vtkTexture* vtkTexture)
     if (NULL != imgCellData->GetScalars())
     {
       data = imgCellData->GetScalars();
-      if (m_bVerbose) std::cout << "    found texture data in cell data" << std::endl;
+      if (_verbose) std::cout << "    found texture data in cell data" << std::endl;
     }
   }
 
@@ -732,7 +732,7 @@ TextureChunkPtr vtkOsgConverter::CreateTexture(vtkTexture* vtkTexture)
     osgTextureChunk->setImage(osgImage);
   };endEditCP(osgTextureChunk);
 
-  if (m_bVerbose)
+  if (_verbose)
   {
     std::cout << "    Loading image with " << iImgDims[0] << " x " << iImgDims[1] << " x " << iImgDims[2] << "pixels." << std::endl;
     std::cout << "    components: " << iImgComps << std::endl;
@@ -744,7 +744,7 @@ TextureChunkPtr vtkOsgConverter::CreateTexture(vtkTexture* vtkTexture)
 
 ChunkMaterialPtr vtkOsgConverter::CreateMaterial(bool lit, bool hasTexCoords)
 {
-  if (m_bVerbose)
+  if (_verbose)
     std::cout << "Start CreateMaterial()" << std::endl;
 
   vtkProperty *prop = _actor->GetProperty();
@@ -764,7 +764,7 @@ ChunkMaterialPtr vtkOsgConverter::CreateMaterial(bool lit, bool hasTexCoords)
 
   int representation = prop->GetRepresentation();
 
-  if (m_bVerbose)
+  if (_verbose)
   {
     std::cout << "    Colors:" << std::endl;
     std::cout << "    diffuse " << diffuse << " * " << diffuseColor[0] << " " << diffuseColor[1] << " " << diffuseColor[2] << std::endl;
@@ -844,7 +844,7 @@ ChunkMaterialPtr vtkOsgConverter::CreateMaterial(bool lit, bool hasTexCoords)
         
         if(osgTextureChunk != NullFC)
         {
-          if (m_bVerbose)
+          if (_verbose)
             std::cout << "    Add TextureChunk" << std::endl;
           osgChunkMaterial->addChunk(osgTextureChunk);
         }
@@ -852,7 +852,7 @@ ChunkMaterialPtr vtkOsgConverter::CreateMaterial(bool lit, bool hasTexCoords)
     } 
   }endEditCP(osgChunkMaterial);
   
-  if (m_bVerbose)
+  if (_verbose)
     std::cout << "    End CreateMaterial()" << std::endl;
   
   return osgChunkMaterial;
