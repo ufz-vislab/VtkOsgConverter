@@ -8,11 +8,11 @@
 
 #include "vtkExporter.h"
 
-class VTK_RENDERING_EXPORT vtkOpenSGExporter : public vtkExporter
+class vtkOpenSGExporter : public vtkExporter
 {
 public:
   static vtkOpenSGExporter *New();
-  vtkTypeMacro(vtkOpenSGExporter,vtkExporter);
+  vtkTypeRevisionMacro(vtkOpenSGExporter,vtkExporter);
   
   void PrintSelf(ostream& os, vtkIndent indent);
 

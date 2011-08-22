@@ -19,6 +19,7 @@
 #include "vtkRenderWindow.h"
 
 vtkStandardNewMacro(vtkOpenSGExporter);
+vtkCxxRevisionMacro(vtkOpenSGExporter, "$Revision$");
 
 vtkOpenSGExporter::vtkOpenSGExporter()
 {
