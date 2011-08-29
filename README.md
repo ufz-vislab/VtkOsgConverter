@@ -1,6 +1,19 @@
 ParaView OpenSG-Exporter
 ========================
 
+Install with ParaView 3.8.1 for Windows x64
+-------------------------------------------
+
+- Install [ParaView 3.8.1 development][pv_dev]
+- Copy the unzipped dlls to  `[Your ParaView install directory]/bin`
+- Start ParaView
+- Open *Tools / Manage Plugins*
+ - On the right side click on *Load New ...*
+  - Goto the ParaView bin directory, select *OpenSG_Exporter.dll* and click *Ok*
+  - Expand the new OpenSG_Exporter entry by clicking on the plus sign and check *Auto Load*
+ - From now on the plugin gets loaded automatically on startup
+- Export the entire visible scene through *File / Export / .osb*
+
 Compile against ParaView 3.8.1 development install for Windows x64
 ------------------------------------------------------------------
 
