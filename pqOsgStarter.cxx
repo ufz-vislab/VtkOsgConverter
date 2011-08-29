@@ -23,11 +23,11 @@ pqOsgStarter::~pqOsgStarter()
 void pqOsgStarter::onStartup()
 {
   OSG::osgInit(0, NULL);
-  // qWarning() << "OpenSG inited.";
+  qWarning() << "OpenSG inited.";
 }
 
 void pqOsgStarter::onShutdown()
 {
   OSG::osgExit();
-  // qWarning() << "OpenSG exited.";
+  qWarning() << "OpenSG exited.";
 }

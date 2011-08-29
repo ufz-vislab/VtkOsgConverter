@@ -34,7 +34,7 @@ vtkOpenSGExporter::~vtkOpenSGExporter()
 }
 
 void vtkOpenSGExporter::WriteData()
-{ 
+{
   // make sure the user specified a FileName or FilePointer
   if (this->FileName == NULL)
   {
@@ -84,9 +84,9 @@ void vtkOpenSGExporter::WriteData()
       }
     }
   } 
-  std::cout << "OpenSG converter starts writing file with " << count << " objects." << std::endl;
+  vtkDebugMacro(<< "OpenSG converter starts writing file with " << count << " objects.");
   OSG::SceneFileHandler::the().write(rootNode, this->FileName);
-  std::cout << "OpenSG converter finished." << std::endl;
+  vtkDebugMacro(<< "OpenSG converter finished.");
 }
 
 void vtkOpenSGExporter::PrintSelf(ostream& os, vtkIndent indent)
