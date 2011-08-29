@@ -12,11 +12,11 @@ Compile against ParaView 3.8.1 development install for Windows x64
 - Build OpenSG from the Visual Studio x64 prompt
  - Insert in file Sconstruct in line 848:
 
-		env['ENV']['TMP'] = os.environ.get('TMP')
+			env['ENV']['TMP'] = os.environ.get('TMP')
 
  - Run on the prompt:
 
-		scons.bat compiler=msvc90x64 qt4=no glut=no gif=no tif=yes jpg=yes png=yes jasper=no exr=no zlib=yes
+			scons.bat compiler=msvc90x64 qt4=no glut=no gif=no tif=yes jpg=yes png=yes jasper=no exr=no zlib=yes
 
 - Configure ParaView-Plugin like this:
 
