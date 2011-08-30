@@ -4,7 +4,7 @@ ParaView OpenSG-Exporter
 Install with ParaView 3.8.1 for Windows x64
 -------------------------------------------
 
-- Install [ParaView 3.8.1 development][pv_dev]
+- Install [ParaView 3.8.1][pv]
 - Copy the unzipped dlls to  `[Your ParaView install directory]/bin`
 - Start ParaView
 - Open *Tools / Manage Plugins*
@@ -21,7 +21,7 @@ Compile against ParaView 3.8.1 development install for Windows x64
 - Install [ParaView 3.8.1 development][pv_dev]
 - Build Qt 4.6.2 in `C:\qt\qt-4.6.2-x64`
 - Install [Python 2.6][python] in `C:\Python\Python26-x64`
-- Install [Python 2.5][python25] for OpenSGs Scons-build system
+- Install [Python 2.5][python25] in `C:\Python\Python25` for OpenSGs Scons-build system
 - Build OpenSG from the Visual Studio x64 prompt
  - Insert in file Sconstruct in line 848:
 
@@ -29,7 +29,8 @@ Compile against ParaView 3.8.1 development install for Windows x64
 
  - Run on the prompt:
 
-			scons.bat compiler=msvc90x64 qt4=no glut=no gif=no tif=yes jpg=yes png=yes jasper=no exr=no zlib=yes
+			path=%PATH%;C:\Python\Python25
+			scons.bat compiler=msvc90x64 qt4=no glut=no gif=no tif=yes jpg=yes png=yes jasper=no exr=no zlib=no
 
 - Configure ParaView-Plugin like this:
 
@@ -44,7 +45,7 @@ Compile against ParaView 3.8.1 development install for Windows x64
 
 You can now export the entire visible scene with *File / Export / .osb*.
 
-
+[pv]:http://paraview.org/files/v3.8/ParaView-3.8.1-Win64-x86.exe
 [pv_dev]:http://paraview.org/files/v3.8/ParaView-Development-3.8.1-Win64-x86.exe
 [python]:http://www.python.org/ftp/python/2.6.6/python-2.6.6.amd64.msi
 [python25]:http://www.python.org/ftp/python/2.5.4/python-2.5.4.msi
