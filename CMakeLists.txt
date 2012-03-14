@@ -41,7 +41,11 @@ OPTION(PACKAGING "This will package everything as a zip file." OFF)
 IF(PACKAGING)
   SET(INSTALL_DIRECTORY .)
 ELSE()
-  SET(INSTALL_DIRECTORY ${ParaView_DIR}/bin)
+  IF(APPLE)
+    SET(INSTALL_DIRECTORY ${ParaView_DIR}/bin/paraview.app/Contents/MacOS/plugins)
+  ELSE()
+    SET(INSTALL_DIRECTORY ${ParaView_DIR}/bin)
+  ENDIF() # APPLE
 ENDIF() # PACKAGING
 
 IF(WIN32)
