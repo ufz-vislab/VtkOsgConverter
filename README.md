@@ -6,35 +6,45 @@ Mac OS Build
 
 - Install [Homebrew](http://mxcl.github.com/homebrew/)
 
-		/usr/bin/ruby -e "$(/usr/bin/curl -fsSL https://raw.github.com/mxcl/homebrew/master/Library/Contributions/install_homebrew.rb)"
+```shell
+/usr/bin/ruby -e "$(/usr/bin/curl -fsSL https://raw.github.com/mxcl/homebrew/master/Library/Contributions/install_homebrew.rb)"
+```
 
 - Install Qt and OpenSG
 
-		brew install qt open-sg
+```shell
+brew install qt open-sg
+```
 
 - Clone ParaView
 
-		git clone --recursive https://github.com/Kitware/ParaView.git
+```shell
+git clone --recursive https://github.com/Kitware/ParaView.git
+```
 
 - Build ParaView
 
-		mkdir ParaView_Build
-		cd ParaView_Build
-		ccmake ../ParaView -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
-		make -j
+```shell
+mkdir ParaView_Build
+cd ParaView_Build
+ccmake ../ParaView -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
+make -j
+```
 
 - Clone the plugin
 
-		git clone https://bilke@github.com/bilke/pv_opensg_plugin.git
+```shell
+git clone https://bilke@github.com/bilke/pv_opensg_plugin.git
+```
 
 - Build the plugin
 
-		mkdir pv_opensg_plugin_build
-		cd pv_opensg_plugin_build
-		ccmake ../pv_opensg_plugin -DParaView_DIR:PATH=../ParaView_Build -DCMAKE_BUILD_TYPE=Release
-		make -j install
-
-- Start ParaView
+```shell
+mkdir pv_opensg_plugin_build
+cd pv_opensg_plugin_build
+ccmake ../pv_opensg_plugin -DParaView_DIR:PATH=../ParaView_Build -DCMAKE_BUILD_TYPE=Release
+make -j install
+```
 
 Windows Build
 -------------
