@@ -70,13 +70,15 @@ Windows Build
 - Install [Python 2.5][python25] in `C:\Python\Python25` for OpenSGs Scons-build system
 - Build OpenSG from the Visual Studio x64 prompt
  - Insert in file Sconstruct in line 848:
-
-		env['ENV']['TMP'] = os.environ.get('TMP')
+ ```shell
+ env['ENV']['TMP'] = os.environ.get('TMP')
+ ```
 
  - Run on the prompt:
-
-		path=%PATH%;C:\Python\Python25
-		scons.bat compiler=msvc90x64 qt4=no glut=no gif=no tif=yes jpg=yes png=yes jasper=no exr=no zlib=no
+ ```shell
+ path=%PATH%;C:\Python\Python25
+ scons.bat compiler=msvc90x64 qt4=no glut=no gif=no tif=yes jpg=yes png=yes jasper=no exr=no zlib=no
+ ```
 
 - Configure ParaView-Plugin like this:
 
