@@ -77,13 +77,18 @@ Windows Build
  - Run on the prompt:
  ```shell
  path=%PATH%;C:\Python\Python25
- scons.bat compiler=msvc90x64 qt4=no glut=no gif=no tif=yes jpg=yes png=yes jasper=no exr=no zlib=no
+ scons.bat compiler=msvc90x64 qt4=no glut=no gif=no tif=yes jpg=yes png=yes jasper=no \
+ exr=no zlib=no
  ```
 
 - Configure ParaView-Plugin like this:
 
  ```shell
- -DOpenSG_LIBRARY_DIRS:FILEPATH="F:/libs/opensg/Build/win32-msvc90x64/installed/lib" -DOpenSG_INCLUDE_DIR:PATH="F:/libs/opensg/Build/win32-msvc90x64/installed/include" -DOPENSG_LIBRARY_DIR:STRING="F:/libs/opensg/Build/win32-msvc90x64/installed/lib" -DQT_QMAKE_EXECUTABLE:FILEPATH="C:/qt/qt-4.6.2-x64-msvc90/bin/qmake.exe" -DParaView_DIR:PATH="C:/ParaView-3.8.1-x64-dev"
+ -DOpenSG_LIBRARY_DIRS:FILEPATH="F:/libs/opensg/Build/win32-msvc90x64/installed/lib" \
+ -DOpenSG_INCLUDE_DIR:PATH="F:/libs/opensg/Build/win32-msvc90x64/installed/include" \
+ -DOPENSG_LIBRARY_DIR:STRING="F:/libs/opensg/Build/win32-msvc90x64/installed/lib" \
+ -DQT_QMAKE_EXECUTABLE:FILEPATH="C:/qt/qt-4.6.2-x64-msvc90/bin/qmake.exe" \
+ -DParaView_DIR:PATH="C:/ParaView-3.8.1-x64-dev"
  ```
 
 - Remove the following line from *OpenSG_Exporter properties / Linker / Input / Additional Dependencies*:
