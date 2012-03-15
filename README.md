@@ -77,8 +77,8 @@ Windows Build
  - Run on the prompt:
  ```shell
  path=%PATH%;C:\Python\Python25
- scons.bat compiler=msvc90x64 qt4=no glut=no gif=no tif=yes jpg=yes png=yes jasper=no \
- exr=no zlib=no
+ scons.bat compiler=msvc90x64 qt4=no glut=no gif=no tif=yes jpg=yes png=yes \
+ jasper=no exr=no zlib=no
  ```
 
 - Configure ParaView-Plugin like this:
