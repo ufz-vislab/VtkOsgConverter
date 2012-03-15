@@ -1,6 +1,8 @@
 ParaView OpenSG-Exporter
 ========================
 
+An ParaView-Exporter-Plugin which allows you to export the entire visible scene to OpenSGs (Version 1.8) binary format.
+
 Mac OS Build
 --------------
 
