@@ -6,45 +6,45 @@ Mac OS Build
 
 - Install [Homebrew](http://mxcl.github.com/homebrew/)
 
-```shell
-/usr/bin/ruby -e "$(/usr/bin/curl -fsSL https://raw.github.com/mxcl/homebrew/master/Library/Contributions/install_homebrew.rb)"
-```
+ ```shell
+ /usr/bin/ruby -e "$(/usr/bin/curl -fsSL https://raw.github. com/mxcl/homebrew/master/Library/Contributions/install_homebrew.rb)"
+ ```
 
 - Install Qt and OpenSG
 
-```shell
-brew install qt open-sg
-```
+ ```shell
+ brew install qt open-sg
+ ```
 
 - Clone ParaView
 
-```shell
-git clone --recursive https://github.com/Kitware/ParaView.git
-```
+ ```shell
+ git clone --recursive https://github.com/Kitware/ParaView.git
+ ```
 
 - Build ParaView
 
-```shell
-mkdir ParaView_Build
-cd ParaView_Build
-ccmake ../ParaView -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
-make -j
-```
+ ```shell
+ mkdir ParaView_Build
+ cd ParaView_Build
+ ccmake ../ParaView -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
+ make -j
+ ```
 
 - Clone the plugin
 
-```shell
-git clone https://bilke@github.com/bilke/pv_opensg_plugin.git
-```
+ ```shell
+ git clone https://bilke@github.com/bilke/pv_opensg_plugin.git
+ ```
 
 - Build the plugin
 
-```shell
-mkdir pv_opensg_plugin_build
-cd pv_opensg_plugin_build
-ccmake ../pv_opensg_plugin -DParaView_DIR:PATH=../ParaView_Build -DCMAKE_BUILD_TYPE=Release
-make -j install
-```
+ ```shell
+ mkdir pv_opensg_plugin_build
+ cd pv_opensg_plugin_build
+ ccmake ../pv_opensg_plugin -DParaView_DIR:PATH=../ParaView_Build -DCMAKE_BUILD_TYPE=Release
+ make -j install
+ ```
 
 Windows Build
 -------------
@@ -70,7 +70,7 @@ Windows Build
 - Install [Python 2.5][python25] in `C:\Python\Python25` for OpenSGs Scons-build system
 - Build OpenSG from the Visual Studio x64 prompt
  - Insert in file Sconstruct in line 848:
- ```shell
+ ```python
  env['ENV']['TMP'] = os.environ.get('TMP')
  ```
 
@@ -82,11 +82,15 @@ Windows Build
 
 - Configure ParaView-Plugin like this:
 
-		-DOpenSG_LIBRARY_DIRS:FILEPATH="F:/libs/opensg/Build/win32-msvc90x64/installed/lib" -DOpenSG_INCLUDE_DIR:PATH="F:/libs/opensg/Build/win32-msvc90x64/installed/include" -DOPENSG_LIBRARY_DIR:STRING="F:/libs/opensg/Build/win32-msvc90x64/installed/lib" -DQT_QMAKE_EXECUTABLE:FILEPATH="C:/qt/qt-4.6.2-x64-msvc90/bin/qmake.exe" -DParaView_DIR:PATH="C:/ParaView-3.8.1-x64-dev"
+ ```shell
+-DOpenSG_LIBRARY_DIRS:FILEPATH="F:/libs/opensg/Build/win32-msvc90x64/installed/lib" -DOpenSG_INCLUDE_DIR:PATH="F:/libs/opensg/Build/win32-msvc90x64/installed/include" -DOPENSG_LIBRARY_DIR:STRING="F:/libs/opensg/Build/win32-msvc90x64/installed/lib" -DQT_QMAKE_EXECUTABLE:FILEPATH="C:/qt/qt-4.6.2-x64-msvc90/bin/qmake.exe" -DParaView_DIR:PATH="C:/ParaView-3.8.1-x64-dev"
+ ```
 
 - Remove the following line from *OpenSG_Exporter properties / Linker / Input / Additional Dependencies*:
-
-		"C:\Program Files (x86)\Microsoft DirectX SDK (February 2010)\Lib\x64\d3d9.lib"
+ 
+ ```shell
+"C:\Program Files (x86)\Microsoft DirectX SDK (February 2010)\Lib\x64\d3d9.lib"
+ ```
 
 - Build the plugin and run the `INSTALL` target
 
