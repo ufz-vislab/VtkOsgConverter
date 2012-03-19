@@ -37,16 +37,15 @@ STRING(REPLACE ".lib" ".dll" OpenSG_OSGBASE_LIBRARY_DLL ${OpenSG_OSGBASE_LIBRARY
 STRING(REPLACE ".lib" ".dll" OpenSG_OSGSYSTEM_LIBRARY_DLL ${OpenSG_OSGSYSTEM_LIBRARY})
 
 # Install targets with an absolute destination path will not be packaged at all!!!
-OPTION(PACKAGING "This will package everything as a zip file." OFF)
-IF(PACKAGING)
-  SET(INSTALL_DIRECTORY .)
-ELSE()
+OPTION(PACKAGING "This will package everything in a zip file." OFF)
+OPTION(INSTALL_IN_PARAVIEW "This will install the plugin in ParaView." OFF)
+IF(INSTALL_IN_PARAVIEW)
   IF(APPLE)
     SET(INSTALL_DIRECTORY ${ParaView_DIR}/bin/paraview.app/Contents/MacOS/plugins)
   ELSE()
-    SET(INSTALL_DIRECTORY ${ParaView_DIR}/bin)
+    SET(INSTALL_DIRECTORY ${ParaView_DIR}/bin/plugins)
   ENDIF() # APPLE
-ENDIF() # PACKAGING
+ENDIF() # INSTALL_IN_PARAVIEW
 
 IF(WIN32)
 	INSTALL(TARGETS OpenSG_Exporter RUNTIME DESTINATION ${INSTALL_DIRECTORY})
