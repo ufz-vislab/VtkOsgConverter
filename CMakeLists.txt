@@ -39,6 +39,7 @@ STRING(REPLACE ".lib" ".dll" OpenSG_OSGSYSTEM_LIBRARY_DLL ${OpenSG_OSGSYSTEM_LIB
 # Install targets with an absolute destination path will not be packaged at all!!!
 OPTION(PACKAGING "This will package everything in a zip file." OFF)
 OPTION(INSTALL_IN_PARAVIEW "This will install the plugin in ParaView." OFF)
+SET(INSTALL_DIRECTORY ${CMAKE_INSTALL_PREFIX})
 IF(INSTALL_IN_PARAVIEW)
   IF(APPLE)
     SET(INSTALL_DIRECTORY ${ParaView_DIR}/bin/paraview.app/Contents/MacOS/plugins)
