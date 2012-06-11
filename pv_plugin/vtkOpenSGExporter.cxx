@@ -74,10 +74,10 @@ void vtkOpenSGExporter::WriteData()
       {
         vtkOsgConverter osgConverter(aPart);
         osgConverter.SetVerbose(true);
-        if(osgConverter.WriteAnActor())
+        if(osgConverter.convert())
         {
           beginEditCP(rootNode);
-          rootNode->addChild(osgConverter.GetOsgNode());
+          rootNode->addChild(osgConverter.getNode());
           endEditCP(rootNode);
           ++count;
         }

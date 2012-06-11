@@ -60,7 +60,7 @@ vtkOsgConverter::~vtkOsgConverter(void)
 	_osgRoot = NullFC;
 }
 
-bool vtkOsgConverter::WriteAnActor()
+bool vtkOsgConverter::convert()
 {
 	vtkMapper* actorMapper = _actor->GetMapper();
 	// see if the actor has a mapper. it could be an assembly
@@ -696,7 +696,7 @@ void vtkOsgConverter::SetVerbose(bool value)
 	_verbose = value;
 }
 
-NodePtr vtkOsgConverter::GetOsgNode()
+NodePtr vtkOsgConverter::getNode()
 {
 	return _osgRoot;
 }

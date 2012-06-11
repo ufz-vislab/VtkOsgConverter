@@ -1,0 +1,25 @@
+# - Config file for the VtkOsgConverter package
+# It defines the following variables
+#  VTKOSGCONVERTER_FOUND        - is it found at all
+#  VTKOSGCONVERTER_INCLUDE_DIRS - include directories for VtkOsgConverter
+#  VTKOSGCONVERTER_LIBRARIES    - libraries to link against
+#  VTKOSGCONVERTER_EXECUTABLE   - the bar executable
+ 
+# Compute paths
+GET_FILENAME_COMPONENT(VTKOSGCONVERTER_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+IF(EXISTS "${VTKOSGCONVERTER_CMAKE_DIR}/CMakeCache.txt")
+   # In build tree
+   INCLUDE("${VTKOSGCONVERTER_CMAKE_DIR}/VtkOsgConverterBuildTreeSettings.cmake")
+ELSE()
+   SET(VTKOSGCONVERTER_INCLUDE_DIRS "${VTKOSGCONVERTER_CMAKE_DIR}/@CONF_REL_INCLUDE_DIR@")
+ENDIF()
+ 
+# Our library dependencies (contains definitions for IMPORTED targets)
+INCLUDE("${VTKOSGCONVERTER_CMAKE_DIR}/VtkOsgConverterLibraryDepends.cmake")
+ 
+# These are IMPORTED targets created by VtkOsgConverterLibraryDepends.cmake
+SET(VTKOSGCONVERTER_LIBRARIES VtkOsgConverter @LINK_LIBRARIES@)
+SET(VTKOSGCONVERTER_EXECUTABLE vtk_fbx_converter)
+
+# Set to found
+SET(VTKOSGCONVERTER_FOUND TRUE)

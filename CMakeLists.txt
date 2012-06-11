@@ -1,78 +1,93 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+PROJECT(VtkOsgConverter)
+SET(VTKOSGCONVERTER_MAJOR_VERSION 1)
+SET(VTKOSGCONVERTER_MINOR_VERSION 1)
+SET(VTKOSGCONVERTER_PATCH_VERSION 0)
+SET(VTKOSGCONVERTER_VERSION
+  ${VTKOSGCONVERTER_MAJOR_VERSION}.${VTKOSGCONVERTER_MINOR_VERSION}.${VTKOSGCONVERTER_PATCH_VERSION})
 
-PROJECT(pv_opensg_plugin)
-SET(VERSION_MAJOR 1)
-SET(VERSION_MINOR 0)
-
+# Find
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
-FIND_PACKAGE(ParaView REQUIRED)
+FIND_PACKAGE(ParaView)
 FIND_PACKAGE(OpenSG COMPONENTS OSGBase OSGSystem REQUIRED)
-INCLUDE(${PARAVIEW_USE_FILE})
-
-IF("${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}" VERSION_LESS "3.10")
-  SET(SERVER_MANAGER_XML_FILE OpenSGExporter_3_8_1.xml)
+IF(ParaView_FOUND)
+  INCLUDE(${PARAVIEW_USE_FILE})
+  OPTION(INSTALL_IN_PARAVIEW "This will install the plugin in ParaView." OFF)
 ELSE()
-  SET(SERVER_MANAGER_XML_FILE OpenSGExporter.xml)
-ENDIF() # PARAVIEW_VERSION
+  FIND_PACKAGE(VTK)
+  IF(OGS_USE_QT AND (VTK_VERSION_MAJOR LESS 5 OR VTK_VERSION_MINOR LESS 8))
+    MESSAGE(FATAL_ERROR "VTK not found but is required! Minimum version: VTK 5.8.x")
+  ENDIF()
+  INCLUDE( ${VTK_USE_FILE} )
+ENDIF()
 
-# Initing and exiting of OpenSG
-QT4_WRAP_CPP(MOC_SRCS pqOsgStarter.h)
-ADD_PARAVIEW_AUTO_START(IFACES IFACE_SRCS CLASS_NAME pqOsgStarter
-                        STARTUP onStartup
-                        SHUTDOWN onShutdown)
-
-ADD_PARAVIEW_PLUGIN(OpenSG_Exporter "${VERSION_MAJOR}.${VERSION_MINOR}"
-	GUI_INTERFACES ${IFACES}
-	SERVER_MANAGER_XML ${SERVER_MANAGER_XML_FILE}
-	SERVER_MANAGER_SOURCES vtkOpenSGExporter.cxx
-	SERVER_SOURCES vtkOSGConverter.cpp
-	SOURCES pqOsgStarter.cxx ${MOC_SRCS} ${IFACE_SRCS}
-	)
-
-USE_OPENSG(OpenSG_Exporter)
-
-### INSTALL and PACKAGING ###
-STRING(REPLACE ".lib" ".dll" OpenSG_OSGBASE_LIBRARY_DLL ${OpenSG_OSGBASE_LIBRARY})
-STRING(REPLACE ".lib" ".dll" OpenSG_OSGSYSTEM_LIBRARY_DLL ${OpenSG_OSGSYSTEM_LIBRARY})
-
-# Install targets with an absolute destination path will not be packaged at all!!!
-OPTION(PACKAGING "This will package everything in a zip file." OFF)
-OPTION(INSTALL_IN_PARAVIEW "This will install the plugin in ParaView." OFF)
-SET(INSTALL_DIRECTORY ${CMAKE_INSTALL_PREFIX})
-IF(INSTALL_IN_PARAVIEW)
-  IF(APPLE)
-    SET(INSTALL_DIRECTORY ${ParaView_DIR}/bin/paraview.app/Contents/MacOS/plugins)
-  ELSE()
-    SET(INSTALL_DIRECTORY ${ParaView_DIR}/bin/plugins)
-  ENDIF() # APPLE
-ENDIF() # INSTALL_IN_PARAVIEW
-
-IF(WIN32)
-	INSTALL(TARGETS OpenSG_Exporter RUNTIME DESTINATION ${INSTALL_DIRECTORY}/plugins)
-	INSTALL(FILES
-	  ${OpenSG_OSGBASE_LIBRARY_DLL}
-	  ${OpenSG_OSGSYSTEM_LIBRARY_DLL}
-	  ${OpenSG_INCLUDE_DIR}/../../../../../supportlibs/lib/zlib.dll
-	  ${CMAKE_SOURCE_DIR}/README.md
-	  DESTINATION ${INSTALL_DIRECTORY})
-	
-	IF(PACKAGING)
-	  SET(CPACK_GENERATOR ZIP)
-	  SET(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR}")
-    SET(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR}")
-    SET(CPACK_PACKAGE_VERSION_PATCH "0")
-    SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "ParaView OpenSG-Exporter Plugin")
-    SET(CPACK_PACKAGE_VENDOR "Lars Bilke")
-    SET(CPACK_PACKAGE_INSTALL_DIRECTORY ".")
-    IF(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
-      SET(WIN_VERSION "win64")
-    ELSE()
-      SET(WIN_VERSION "win32")
-    ENDIF()
-    SET(CPACK_PACKAGE_FILE_NAME "pv_opensg_plugin-${VERSION_MAJOR}.${VERSION_MINOR}-${WIN_VERSION}-ParaView-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}.${PARAVIEW_VERSION_PATCH}")
-    SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/README.md")
-    INCLUDE(CPack)
-  ENDIF() # PACKAGING
+# Offer the user the choice of overriding the installation directories
+SET(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")
+SET(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
+SET(INSTALL_INCLUDE_DIR include CACHE PATH
+  "Installation directory for header files")
+IF(WIN32 AND NOT CYGWIN)
+  SET(DEF_INSTALL_CMAKE_DIR CMake)
 ELSE()
-	INSTALL(TARGETS OpenSG_Exporter LIBRARY DESTINATION ${INSTALL_DIRECTORY})
-ENDIF() # WIN32
+  SET(DEF_INSTALL_CMAKE_DIR lib/CMake/VtkFbxConverter)
+ENDIF()
+SET(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH
+  "Installation directory for CMake files")
+
+# Make relative paths absolute (needed later on)
+FOREACH(p LIB BIN INCLUDE CMAKE)
+  SET(var INSTALL_${p}_DIR)
+  IF(NOT IS_ABSOLUTE "${${var}}")
+    SET(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
+  ENDIF()
+ENDFOREACH()
+
+INCLUDE_DIRECTORIES(
+  .
+)
+
+# Library
+ADD_LIBRARY(VtkOsgConverter
+  vtkOsgConverter.h
+  vtkOsgConverter.cpp
+)
+
+SET_TARGET_PROPERTIES(VtkOsgConverter PROPERTIES
+  PUBLIC_HEADER "VtkOsgConverter.h")
+
+USE_OPENSG(VtkOsgConverter)
+
+IF(NOT INSTALL_IN_PARAVIEW)
+  INSTALL(TARGETS VtkOsgConverter
+    # IMPORTANT: Add the library to the "export-set"
+    EXPORT VtkFbxConverterLibraryDepends
+    RUNTIME DESTINATION "${INSTALL_BIN_DIR}" COMPONENT bin
+    ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT lib
+    LIBRARY DESTINATION "${INSTALL_LIB_DIR}" COMPONENT shlib
+    PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}/VtkOsgConverter"
+      COMPONENT dev)
+ENDIF()
+
+# Add all targets to the build-tree export set
+EXPORT(TARGETS VtkOsgConverter
+  FILE "${PROJECT_BINARY_DIR}/VtkOsgConverterLibraryDepends.cmake")
+
+# Export the package for use from the build-tree
+# (this registers the build-tree with a global CMake-registry)
+EXPORT(PACKAGE VtkOsgConverter)
+
+# Create a VtkFbxConverterBuildTreeSettings.cmake file for the use from the build tree
+CONFIGURE_FILE(VtkOsgConverterBuildTreeSettings.cmake.in
+  "${PROJECT_BINARY_DIR}/VtkOsgConverterBuildTreeSettings.cmake" @ONLY)
+
+# Create the VtkFbxConverterConfig.cmake and VtkFbxConverterConfigVersion files
+FILE(RELATIVE_PATH CONF_REL_INCLUDE_DIR "${INSTALL_CMAKE_DIR}"
+   "${INSTALL_INCLUDE_DIR}")
+CONFIGURE_FILE(VtkOsgConverterConfig.cmake.in
+  "${PROJECT_BINARY_DIR}/VtkOsgConverterConfig.cmake" @ONLY)
+CONFIGURE_FILE(VtkOsgConverterConfigVersion.cmake.in
+  "${PROJECT_BINARY_DIR}/VtkOsgConverterConfigVersion.cmake" @ONLY)
+
+IF(ParaView_FOUND)
+  ADD_SUBDIRECTORY(pv_plugin)
+ENDIF()

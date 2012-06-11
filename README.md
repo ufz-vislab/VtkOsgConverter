@@ -3,6 +3,19 @@ ParaView OpenSG-Exporter
 
 An ParaView-Exporter-Plugin which allows you to export the entire visible scene to OpenSGs (Version 1.8) binary format.
 
+## Inclusion in other projects ##
+
+    # Find package
+    SET(VtkOsgConverter_DIR /build/dir) # Optional
+    FIND_PACKAGE(VtkOsgConverter 1.0.0
+        REQUIRED COMPONENTS lib
+        CONFIG)
+
+    IF(VTKOSGCONVERTER_FOUND)
+        INCLUDE_DIRECTORIES(${VTKOSGCONVERTER_INCLUDE_DIRS})
+        TARGET_LINK_LIBRARIES(target ${VTKOSGCONVERTER_LIBRARIES})
+    ENDIF() # VTKOSGCONVERTER_FOUND
+
 Mac OS Build
 --------------
 

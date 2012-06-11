@@ -22,10 +22,10 @@ class vtkTexture;
 ///
 /// @code
 /// vtkOsgConverter* osgConverter = new vtkOsgConverter(aVtkActor);
-/// if(osgConverter->WriteAnActor())
+/// if(osgConverter->convert())
 /// {
 ///   beginEditCP(rootNode);
-///   rootNode->addChild(osgConverter->GetOsgNode());
+///   rootNode->addChild(osgConverter->getNode());
 ///   endEditCP(rootNode);
 /// }
 /// @endcode
@@ -35,9 +35,9 @@ public:
 	vtkOsgConverter(vtkActor* actor);
 	virtual ~vtkOsgConverter();
 
-	bool WriteAnActor();
+	bool convert();
 	void SetVerbose(bool value);
-	OSG::NodePtr GetOsgNode();
+	OSG::NodePtr getNode();
 
 protected:
 
