@@ -39,6 +39,8 @@
 #include <OpenSG/OSGPolygonChunk.h>
 #include <OpenSG/OSGSimpleGeometry.h>
 #include <OpenSG/OSGTwoSidedLightingChunk.h>
+#include <OpenSG/OSGTextureChunk.h>
+#include <OpenSG/OSGGL.h>
 
 OSG_USING_NAMESPACE
 
@@ -936,6 +938,11 @@ ChunkMaterialPtr vtkOsgConverter::CreateMaterial(bool lit, bool hasTexCoords)
 						std::cout << "    Add TextureChunk" << std::endl;
 					osgChunkMaterial->addChunk(osgTextureChunk);
 				}
+
+				// Per default EnvMode is set to GL_REPLACE which does not lit the surface
+				beginEditCP(osgTextureChunk);
+				osgTextureChunk->setEnvMode(GL_MODULATE);
+				endEditCP(osgTextureChunk);
 			}
 		}
 	} endEditCP(osgChunkMaterial);
