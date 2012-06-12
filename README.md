@@ -7,7 +7,7 @@ An ParaView-Exporter-Plugin which allows you to export the entire visible scene 
 
     # Find package
     SET(VtkOsgConverter_DIR /build/dir) # Optional
-    FIND_PACKAGE(VtkOsgConverter 1.0.0
+    FIND_PACKAGE(VtkOsgConverter 1.1.0
         REQUIRED COMPONENTS lib
         CONFIG)
 
