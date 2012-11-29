@@ -57,7 +57,9 @@ SET_TARGET_PROPERTIES(VtkOsgConverter PROPERTIES
 
 USE_OPENSG(VtkOsgConverter)
 
-IF(NOT INSTALL_IN_PARAVIEW)
+IF(INSTALL_IN_PARAVIEW OR NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  # Do not install
+ELSE()
   INSTALL(TARGETS VtkOsgConverter
     # IMPORTANT: Add the library to the "export-set"
     EXPORT VtkFbxConverterLibraryDepends
