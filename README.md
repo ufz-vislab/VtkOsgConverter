@@ -34,7 +34,9 @@ Mac OS Build
 - Clone ParaView
 
  ```shell
- git clone --recursive https://github.com/Kitware/ParaView.git
+ git clone https://github.com/Kitware/ParaView.git
+ git checkout release
+ it submodule update --init
  ```
 
 - Build ParaView
