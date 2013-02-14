@@ -266,6 +266,7 @@ bool vtkOsgConverter::convert()
 			std::endl;
 			std::cout << "  colors are given: " <<
 			((m_iColorType == PER_VERTEX) ? "per vertex" : "per cell") << std::endl;
+			std::cout << "  table range: (" << range[0] << ", " << range[1] << ")" << std::endl;
 		}
 		else
 			std::cout << "  no colors are given" << std::endl;

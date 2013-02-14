@@ -34,7 +34,9 @@ Mac OS Build
 - Clone ParaView
 
  ```shell
- git clone --recursive https://github.com/Kitware/ParaView.git
+ git clone https://github.com/Kitware/ParaView.git
+ git checkout release
+ it submodule update --init
  ```
 
 - Build ParaView
@@ -57,9 +59,11 @@ Mac OS Build
  ```shell
  mkdir pv_opensg_plugin_build
  cd pv_opensg_plugin_build
- ccmake ../pv_opensg_plugin -DParaView_DIR:PATH=../ParaView_Build -DCMAKE_BUILD_TYPE=Release
+ ccmake ../pv_opensg_plugin -DParaView_DIR:PATH=../ParaView_Build -DINSTALL_IN_PARAVIEW=ON -DUSE_INSTALL_PREFIX=OFF -DCMAKE_BUILD_TYPE=Release
  make -j install
  ```
+ 
+    **Note**: `ParaView_DIR` has to be a relative path.
 
 Windows Build
 -------------

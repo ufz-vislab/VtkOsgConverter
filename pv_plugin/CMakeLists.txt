@@ -32,7 +32,7 @@ IF(INSTALL_IN_PARAVIEW)
     IF(USE_INSTALL_PREFIX)
       SET(INSTALL_DIRECTORY ${CMAKE_INSTALL_PREFIX}/bin/paraview.app/Contents/MacOS/plugins)
     ELSE()
-      SET(INSTALL_DIRECTORY ${ParaView_DIR}/bin/paraview.app/Contents/MacOS/plugins)
+      SET(INSTALL_DIRECTORY ${CMAKE_SOURCE_DIR}/${ParaView_DIR}/bin/paraview.app/Contents/MacOS/plugins)
     ENDIF()
   ELSE()
     IF(USE_INSTALL_PREFIX)
@@ -51,7 +51,7 @@ IF(WIN32)
 	  ${OpenSG_INCLUDE_DIR}/../../../../../supportlibs/lib/zlib.dll
 	  ${CMAKE_SOURCE_DIR}/README.md
 	  DESTINATION ${INSTALL_DIRECTORY})
-	
+
 	IF(PACKAGING)
 	  SET(CPACK_GENERATOR ZIP)
 	  SET(CPACK_PACKAGE_VERSION_MAJOR "${VTKOSGCONVERTER_MAJOR_VERSION}")
