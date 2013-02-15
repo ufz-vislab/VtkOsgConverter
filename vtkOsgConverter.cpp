@@ -951,6 +951,8 @@ ChunkMaterialPtr vtkOsgConverter::CreateMaterial(bool lit, bool hasTexCoords)
 		if(opacity < 1.0)
 		{
 			BlendChunkPtr blendChunk = BlendChunk::create();
+			blendChunk->setSrcFactor(GL_SRC_ALPHA);
+			blendChunk->setDestFactor(GL_ONE_MINUS_SRC_ALPHA);
 			osgChunkMaterial->addChunk(blendChunk);
 		}
 	} endEditCP(osgChunkMaterial);
