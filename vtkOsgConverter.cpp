@@ -871,11 +871,13 @@ ChunkMaterialPtr vtkOsgConverter::CreateMaterial(bool lit, bool hasTexCoords)
 		{
 			polygonChunk->setFrontMode(GL_LINE);
 			polygonChunk->setBackMode(GL_LINE);
+			lit = false;
 		}
 		else
 		{
 			polygonChunk->setFrontMode(GL_POINT);
 			polygonChunk->setBackMode(GL_POINT);
+			lit = false;
 		}
 	} endEditCP(polygonChunk);
 
