@@ -883,7 +883,7 @@ ChunkMaterialPtr vtkOsgConverter::CreateMaterial(bool lit, bool hasTexCoords)
 	beginEditCP(osgMaterialChunk);
 	{
 		// In ParaView the solid color is the ambient color instead of the diffuse color
-		if(diffuseColor[0] < 0.1 && diffuseColor[1] < 0.1 && diffuseColor[2] < 0.1)
+		if((diffuseColor[0] < 0.1 && diffuseColor[1] < 0.1 && diffuseColor[2] < 0.1) || diffuse < 0.1)
 			osgMaterialChunk->setDiffuse(Color4f(ambientColor[0] * ambient, ambientColor[1] *
 			                                     ambient, ambientColor[2] * ambient, opacity));
 		else
