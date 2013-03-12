@@ -12,22 +12,22 @@ class vtkOpenSGExporter : public vtkExporter
 {
 public:
   static vtkOpenSGExporter *New();
-  vtkTypeRevisionMacro(vtkOpenSGExporter,vtkExporter);
-  
+  vtkTypeMacro(vtkOpenSGExporter,vtkExporter);
+
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
   // Specify the name of the VRML file to write.
   vtkSetStringMacro(FileName);
   vtkGetStringMacro(FileName);
-  
+
 protected:
   vtkOpenSGExporter();
   ~vtkOpenSGExporter();
 
-  void WriteData();
+  virtual void WriteData();
   char *FileName;
-  
+
 private:
   vtkOpenSGExporter(const vtkOpenSGExporter&);  // Not implemented.
   void operator=(const vtkOpenSGExporter&);  // Not implemented.
