@@ -80,7 +80,11 @@ bool vtkOsgConverter::convert()
 	if(inputDO->IsA("vtkCompositeDataSet"))
 	{
 		vtkCompositeDataGeometryFilter* gf = vtkCompositeDataGeometryFilter::New();
+#ifdef NEW_VTK
+		gf->SetInputData(inputDO);
+#else
 		gf->SetInput(inputDO);
+#endif
 		gf->Update();
 		pd = gf->GetOutput();
 		gf->Delete();
@@ -88,7 +92,11 @@ bool vtkOsgConverter::convert()
 	else if(inputDO->GetDataObjectType() != VTK_POLY_DATA)
 	{
 		vtkGeometryFilter* gf = vtkGeometryFilter::New();
+#ifdef NEW_VTK
+		gf->SetInputData(inputDO);
+#else
 		gf->SetInput(inputDO);
+#endif
 		gf->Update();
 		pd = gf->GetOutput();
 		gf->Delete();
@@ -110,7 +118,11 @@ bool vtkOsgConverter::convert()
 	{
 		vtkCellDataToPointData* cellDataToPointData = vtkCellDataToPointData::New();
 		cellDataToPointData->PassCellDataOff();
+#ifdef NEW_VTK
+		cellDataToPointData->SetInputData(pd);
+#else
 		cellDataToPointData->SetInput(pd);
+#endif
 		cellDataToPointData->Update();
 		pd = cellDataToPointData->GetPolyDataOutput();
 		cellDataToPointData->Delete();
@@ -120,7 +132,11 @@ bool vtkOsgConverter::convert()
 	else
 		pm->SetScalarMode(actorMapper->GetScalarMode());
 
+#ifdef NEW_VTK
+	pm->SetInputData(pd);
+#else
 	pm->SetInput(pd);
+#endif
 	pm->SetScalarVisibility(actorMapper->GetScalarVisibility());
 
 	vtkLookupTable* lut = NULL;
