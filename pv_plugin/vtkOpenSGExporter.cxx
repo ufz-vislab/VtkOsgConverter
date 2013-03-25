@@ -1,7 +1,7 @@
 /**
  * \file vtkOpenSGExporter.cxx
  * 18/08/2011 LB Initial implementation
- * 
+ *
  * Implementation of vtkOpenSGExporter class
  */
 
@@ -19,7 +19,6 @@
 #include "vtkRenderWindow.h"
 
 vtkStandardNewMacro(vtkOpenSGExporter);
-vtkCxxRevisionMacro(vtkOpenSGExporter, "$Revision$");
 
 vtkOpenSGExporter::vtkOpenSGExporter()
 {
@@ -44,7 +43,7 @@ void vtkOpenSGExporter::WriteData()
 
   // get the renderer
   vtkRenderer *ren = this->RenderWindow->GetRenderers()->GetFirstRenderer();
-  
+
   // make sure it has at least one actor
   if (ren->GetActors()->GetNumberOfItems() < 1)
   {
@@ -58,7 +57,7 @@ void vtkOpenSGExporter::WriteData()
   beginEditCP(rootNode);
   rootNode->setCore(OSG::Group::create());
   endEditCP(rootNode);
-  
+
   vtkActor *anActor, *aPart;
   vtkActorCollection *ac = ren->GetActors();
   ac->PrintSelf(std::cout, vtkIndent());
@@ -83,7 +82,7 @@ void vtkOpenSGExporter::WriteData()
         }
       }
     }
-  } 
+  }
   vtkDebugMacro(<< "OpenSG converter starts writing file with " << count << " objects.");
   OSG::SceneFileHandler::the().write(rootNode, this->FileName);
   vtkDebugMacro(<< "OpenSG converter finished.");
@@ -92,7 +91,7 @@ void vtkOpenSGExporter::WriteData()
 void vtkOpenSGExporter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
- 
+
   if (this->FileName)
     os << indent << "FileName: " << this->FileName << "\n";
   else
