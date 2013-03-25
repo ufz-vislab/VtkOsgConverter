@@ -48,7 +48,7 @@ IF(WIN32)
 	INSTALL(FILES
 	  ${OpenSG_OSGBASE_LIBRARY_DLL}
 	  ${OpenSG_OSGSYSTEM_LIBRARY_DLL}
-	  ${OpenSG_INCLUDE_DIR}/../../../../../supportlibs/lib/zlib.dll
+	  ${OpenSG_LIBRARY_DIR}/zlib.dll
 	  ${CMAKE_SOURCE_DIR}/README.md
 	  DESTINATION ${INSTALL_DIRECTORY})
 
