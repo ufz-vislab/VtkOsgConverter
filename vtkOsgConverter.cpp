@@ -28,7 +28,8 @@
 #include <vtkCellDataToPointData.h>
 #include <vtkLookupTable.h>
 #include <vtkDiscretizableColorTransferFunction.h>
-
+#include <vtkMatrix4x4.h>
+#include <vtkQuaternion.h>
 #include <OpenSG/OSGGeoFunctions.h>
 #include <OpenSG/OSGGroup.h>
 #include <OpenSG/OSGImage.h>
@@ -310,7 +311,11 @@ bool vtkOsgConverter::convert()
 
 	_actor->GetPosition(translation);
 	_actor->GetScale(scaling);
-	//_actor->GetRotation(rotation[0], rotation[1], rotation[2]);
+	vtkSmartPointer<vtkMatrix4x4> matrix = vtkSmartPointer<vtkMatrix4x4>::New();
+	_actor->GetMatrix(matrix);
+	vtkQuaterniond quat;
+	quat.FromMatrix3x3(matrix);
+	quat.Normalize();
 
 	if (_verbose)
 		std::cout << "set scaling: " << scaling[0] << " " << scaling[1] << " " <<
@@ -320,7 +325,7 @@ bool vtkOsgConverter::convert()
 	m.setIdentity();
 	m.setTranslate(translation[0], translation[1], translation[2]);
 	m.setScale(scaling[0], scaling[1], scaling[2]);
-	// TODO QUATERNION m.setRotate(rotation[0], rotation[1], rotation[2])
+	m.setRotate(quat[0], quat[1], quat[2])
 	beginEditCP(_osgTransform);
 	_osgTransform->setMatrix(m);
 	endEditCP(_osgTransform);
