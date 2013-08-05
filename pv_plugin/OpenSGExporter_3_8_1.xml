@@ -9,7 +9,7 @@
           Name of the file to be written.
         </Documentation>
 			</StringVectorProperty>
-			
+
 			<ProxyProperty name="View"
         command="SetView"
         update_self="1">
@@ -21,7 +21,7 @@
         </ProxyGroupDomain>
       </ProxyProperty>
 
-      <Property name="Write" command="Write" 
+      <Property name="Write" command="Write"
         update_self="1">
         <Documentation>
           Triggers exporting of the view.

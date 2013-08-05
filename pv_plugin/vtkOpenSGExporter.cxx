@@ -11,6 +11,7 @@
 
 #include <OpenSG/OSGSceneFileHandler.h>
 #include <OpenSG/OSGGroup.h>
+#include <OpenSG/OSGSimpleAttachments.h>
 
 #include "vtkAssemblyNode.h"
 #include "vtkAssemblyPath.h"
@@ -57,6 +58,8 @@ void vtkOpenSGExporter::WriteData()
   beginEditCP(rootNode);
   rootNode->setCore(OSG::Group::create());
   endEditCP(rootNode);
+  std::string name(this->FileName);
+  setName(rootNode->getCore(), name.substr(0, name.size() - 4));
 
   vtkActor *anActor, *aPart;
   vtkActorCollection *ac = ren->GetActors();
