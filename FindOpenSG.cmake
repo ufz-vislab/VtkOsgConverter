@@ -121,7 +121,6 @@ ENDMACRO(__OpenSG_ADJUST_LIB_VARS)
 
 #-------------------------------------------------------------------------------
 
-
 IF(__OpenSG_IN_CACHE)
 	# values are already in the cache
 
@@ -132,26 +131,11 @@ IF(__OpenSG_IN_CACHE)
 		SET(OpenSG_LIBRARIES ${OpenSG_LIBRARIES} ${OpenSG_${COMPONENT}_LIBRARY})
 	ENDFOREACH(COMPONENT)
 
-	SET(OpenSG_INCLUDE_DIRS "${OpenSG_INCLUDE_DIR}" "${OpenSG_INCLUDE_DIR}/OpenSG")
+	SET(OpenSG_INCLUDE_DIRS "${OpenSG_INCLUDE_DIR}" "${OpenSG_INCLUDE_DIR}/OpenSG" CACHE STRING "")
 
 ELSE(__OpenSG_IN_CACHE)
 	# need to search for libs
-
-	# Visual Studio x32
-	if (VS32)
-	  # Visual Studio x32
-	  SET( __OpenSG_INCLUDE_SEARCH_DIRS
-		$ENV{OPENSG_ROOT}/include
-		${OPENSG_ROOT}/include
-		${LIBRARIES_DIR}/opensg/include
-		${CMAKE_SOURCE_DIR}/../OpenSG/include )
-	  SET( __OpenSG_LIBRARIES_SEARCH_DIRS
-		$ENV{OPENSG_ROOT}/lib
-		${OPENSG_ROOT}/lib
-		${LIBRARIES_DIR}/opensg/lib
-		${CMAKE_SOURCE_DIR}/../opensg/lib )
-	else (VS32)
-	  if (VS64)
+	  if (WIN32)
 		# Visual Studio x64
 		SET( __OpenSG_INCLUDE_SEARCH_DIRS
 		$ENV{OPENSG_ROOT}/include
@@ -163,7 +147,7 @@ ELSE(__OpenSG_IN_CACHE)
 		${OPENSG_ROOT}/lib
 		  ${LIBRARIES_DIR}/opensg_x64/lib
 		  ${CMAKE_SOURCE_DIR}/../opensg_x64/lib )
-	  else (VS64)
+	  else ()
 		# Linux or Mac
 		SET( __OpenSG_INCLUDE_SEARCH_DIRS
 		  "/usr/local"
@@ -174,10 +158,8 @@ ELSE(__OpenSG_IN_CACHE)
 		  "/usr/local"
 		  "/usr/local/lib"
 		  "/opt/boxen/homebrew"
-		  "/opt/boxen/homebrew/lib" )
-	  endif(VS64)
-	endif (VS32)
-
+		 "/opt/boxen/homebrew/lib" )
+	endif()
 
 	# handle input variable OPENSG_INCLUDE_DIR
 	IF(OPENSG_INCLUDE_DIR)
@@ -260,7 +242,7 @@ ELSE(__OpenSG_IN_CACHE)
 	#  End finding OpenSG libraries
 	# ------------------------------------------------------------------------
 
-	SET(OpenSG_INCLUDE_DIRS "${OpenSG_INCLUDE_DIR}" "${OpenSG_INCLUDE_DIR}/OpenSG")
+	SET(OpenSG_INCLUDE_DIRS "${OpenSG_INCLUDE_DIR}" "${OpenSG_INCLUDE_DIR}/OpenSG" CACHE STRING "")
 
 	SET(OpenSG_FOUND FALSE)
 
