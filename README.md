@@ -1,7 +1,7 @@
 ParaView OpenSG-Exporter
 ========================
 
-[![](https://zenodo.org/badge/doi/10.5281/zenodo.10161.png)](http://dx.doi.org/10.5281/zenodo.10161)
+[![](https://zenodo.org/badge/doi/10.5281/zenodo.10161.png)](https://doi.org/10.5281/zenodo.10161)
 
 An ParaView-Exporter-Plugin which allows you to export the entire visible scene to OpenSGs (Version 1.8) binary format.
 
